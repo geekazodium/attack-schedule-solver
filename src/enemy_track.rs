@@ -66,7 +66,7 @@ impl EnemyTrack {
                 AttackFutureInstance::try_create(attack, request_frame, self.first_valid_frame())
             })
             .filter(|future_instance| future_instance.can_meet_request_followup(request))
-            .map(AttackFutureInstance::to_attack)
+            .map(AttackFutureInstance::unwrap)
             .collect()
     }
     pub fn first_valid_frame(&self) -> u64 {

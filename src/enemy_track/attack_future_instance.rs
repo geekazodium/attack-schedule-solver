@@ -52,7 +52,7 @@ impl<'a> AttackFutureInstance<'a> {
         }
         true
     }
-    pub(super) fn to_attack(self) -> &'a EnemyTrackAttack {
+    pub(super) fn unwrap(self) -> &'a EnemyTrackAttack {
         self.attack
     }
 }
