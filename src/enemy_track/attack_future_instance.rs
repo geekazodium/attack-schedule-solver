@@ -46,7 +46,7 @@ impl<'a> AttackFutureInstance<'a> {
                     break;
                 }
             }
-            if !matched{
+            if !matched {
                 return false;
             }
         }

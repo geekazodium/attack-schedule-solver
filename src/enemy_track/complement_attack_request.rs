@@ -73,7 +73,7 @@ impl ComplementAttackRequest {
             self.request_offset += 1;
         }
         self.request_offset -= 1;
-        return false;
+        false
     }
     //inverse of the go to next unclaimed, should undo any result of previous if
     //run after changes are uncommitted.

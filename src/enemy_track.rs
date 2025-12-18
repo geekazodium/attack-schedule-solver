@@ -86,7 +86,7 @@ impl EnemyTrack {
         if let Some(attack_frame) = self.get_attack_frame(attack_index, request.start_frame()) {
             let commit = FutureMoveCommit::new(attack_index, attack_frame);
 
-            request.apply_commit_claim(&self, &commit, false);
+            request.apply_commit_claim(self, &commit, false);
 
             self.future_stack.push(commit);
 
@@ -97,11 +97,11 @@ impl EnemyTrack {
     //uncommit move
     fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
         if let Some(commit) = self.future_stack.pop() {
-            request.apply_commit_claim(&self, &commit, true);
+            request.apply_commit_claim(self, &commit, true);
 
             return true;
         }
-        return false;
+        false
     }
 }
 
@@ -197,7 +197,6 @@ mod enemy_track_tests {
         mock_track.commit(&mut src_request, new_can_meet[0].get_index());
         assert!(!src_request.next_unclaimed());
     }
-
 
     #[test]
     fn can_deny_inapplicable_request() {
