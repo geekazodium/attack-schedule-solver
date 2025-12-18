@@ -1,4 +1,3 @@
-use std::iter::Skip;
 
 use crate::attack::Attack;
 
@@ -55,8 +54,8 @@ impl ComplementAttackRequest {
     pub(crate) fn iter_skip_start(&'_ self) -> impl Iterator<Item = &u64> {
         self.request_frames
             .iter()
-            .skip(self.request_offset + 1)
             .zip(&self.taken_requests)
+            .skip(self.request_offset + 1)
             .filter_map(|pair| if *pair.1 { None } else { Some(pair.0) })
     }
     pub(crate) fn claim_end_time(&self) -> u64 {
@@ -64,6 +63,6 @@ impl ComplementAttackRequest {
     }
     fn claim_request_frame(&mut self, index: usize) -> bool {
         self.taken_requests[index] = true;
-        return true;
+        true
     }
 }

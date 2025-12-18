@@ -35,7 +35,7 @@ impl<'a> AttackFutureInstance<'a> {
             if active >= request.claim_end_time() {
                 return true;
             }
-            while let Some(next_request_frame) = request_iter.next() {
+            for next_request_frame in request_iter.by_ref() {
                 if *next_request_frame > active {
                     return false;
                 }
@@ -44,7 +44,7 @@ impl<'a> AttackFutureInstance<'a> {
                 }
             }
         }
-        return true;
+        true
     }
     pub(super) fn to_attack(self) -> &'a EnemyTrackAttack {
         self.attack

@@ -60,7 +60,7 @@ impl EnemyTrack {
     }
     pub fn first_valid_frame(&self) -> u64 {
         match self.future_stack.last() {
-            Some(commit) => commit.get_full_duration(&self),
+            Some(commit) => commit.get_full_duration(self),
             None => 0,
         }
     }
