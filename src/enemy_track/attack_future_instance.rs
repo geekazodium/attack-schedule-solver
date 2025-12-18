@@ -1,24 +1,31 @@
 use super::complement_attack_request::ComplementAttackRequest;
 
-use crate::attack::Attack;
+use crate::enemy_track::enemy_track_attack_wrapper::EnemyTrackAttack;
 
 #[derive(Debug)]
 pub(super) struct AttackFutureInstance<'a> {
-    attack: &'a Attack,
+    attack: &'a EnemyTrackAttack,
     frames_into_future: u64,
 }
 
 impl<'a> AttackFutureInstance<'a> {
-    pub(super) fn try_create(attack: &'a Attack, request_frame: u64) -> Option<Self> {
+    pub(super) fn try_create(
+        attack: &'a EnemyTrackAttack,
+        request_frame: u64,
+        first_actionable: u64,
+    ) -> Option<Self> {
         attack
-            .get_start_frame(request_frame)
+            .get_attack()
+            .get_start_frame(request_frame, first_actionable)
             .map(|start_frame| Self {
                 attack,
                 frames_into_future: start_frame,
             })
     }
     pub(super) fn active_frame_times(&self) -> impl Iterator<Item = u64> {
-        self.attack.get_active_frames(self.frames_into_future)
+        self.attack
+            .get_attack()
+            .get_active_frames(self.frames_into_future)
     }
     pub(super) fn can_meet_request_followup(&self, request: &ComplementAttackRequest) -> bool {
         let mut request_iter = request.iter_skip_start();
@@ -39,7 +46,7 @@ impl<'a> AttackFutureInstance<'a> {
         }
         return true;
     }
-    pub(super) fn to_attack(self) -> &'a Attack {
+    pub(super) fn to_attack(self) -> &'a EnemyTrackAttack {
         self.attack
     }
 }

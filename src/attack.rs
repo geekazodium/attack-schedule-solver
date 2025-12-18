@@ -19,13 +19,16 @@ impl Attack {
     pub fn get_end_frame(&self) -> Option<u64> {
         self.get_last_active()
     }
+    pub fn get_full_duration(&self) -> u64 {
+        self.duration
+    }
     pub fn get_cooldown(&self) -> u64 {
         self.get_last_active().unwrap_or(self.duration)
     }
-    pub fn get_start_frame(&self, request_frame: u64) -> Option<u64> {
+    pub fn get_start_frame(&self, request_frame: u64, first_actionable: u64) -> Option<u64> {
         self.active
             .first()
-            .filter(|x| **x <= request_frame)
+            .filter(|first_active| !(**first_active + first_actionable > request_frame))
             .map(|x| request_frame - x)
     }
     pub fn active_request_frames(&self) -> &Vec<u64> {
@@ -49,7 +52,18 @@ mod attack_tests {
     #[test]
     fn start_frame_valid() {
         let a = Attack::new(10, vec![8], vec![4]);
-        assert_eq!(a.get_start_frame(15), Some(7));
+        assert_eq!(a.get_start_frame(15, 0), Some(7));
+    }
+
+    #[test]
+    fn start_frame_invalid_due_to_actionable() {
+        let a = Attack::new(10, vec![8], vec![4]);
+        assert_eq!(a.get_start_frame(15, 8), None);
+    }
+    #[test]
+    fn start_frame_invalid_due_to_move_length() {
+        let a = Attack::new(10, vec![16], vec![4]);
+        assert_eq!(a.get_start_frame(15, 0), None);
     }
 
     #[test]
