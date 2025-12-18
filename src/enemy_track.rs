@@ -67,8 +67,10 @@ mod enemy_track_tests {
             Attack::new(10, vec![8, 16], vec![2]),
             Attack::new(20, vec![12], vec![4]),
         ]);
-        let result = mock_track.can_meet_request(&mut vec![20, 28], 0, 100);
-        assert_eq!(result.len(), 2);
+        assert_eq!(
+            mock_track.can_meet_request(&mut vec![20, 28], 0, 100).len(),
+            2
+        );
     }
 
     #[test]
