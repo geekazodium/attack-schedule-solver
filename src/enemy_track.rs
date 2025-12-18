@@ -27,34 +27,47 @@ impl EnemyTrack {
                         .get_start_frame(request_frame)
                         .map(|start_frame| (attack, start_frame))
                 })
-                .filter(|pair| {
-                    dbg!(&pair.0);
-                    let mut tmp_iter = request_vec[(request_offset + 1)..].iter();
-                    dbg!(&tmp_iter);
-                    let active_frames_iter = pair.0.get_active_frames(pair.1);
-                    for active in active_frames_iter.skip(1) {
-                        dbg!(active);
-                        if active >= claim_end {
-                            return true;
-                        }
-                        while let Some(next_request_frame) = tmp_iter.next() {
-                            if *next_request_frame > active {
-                                return false;
-                            }
-                            if *next_request_frame == active {
-                                break;
-                            }
-                        }
-                    }
-                    return true;
-                })
+                .filter(match_request_frames(
+                    request_vec,
+                    &request_offset,
+                    &claim_end,
+                ))
                 .map(|x| x.0)
                 .collect()
         } else {
             vec![]
         }
     }
-    pub fn commit() {}
+    //commit move
+    //uncommit move
+}
+
+fn match_request_frames<'a>(
+    request_vec: &'a Vec<u64>,
+    request_offset: &'a usize,
+    claim_end: &'a u64,
+) -> impl 'a + FnMut(&(&Attack, u64)) -> bool {
+    move |pair: &(&Attack, u64)| {
+        dbg!(&pair.0);
+        let mut tmp_iter = request_vec[(request_offset + 1)..].iter();
+        dbg!(&tmp_iter);
+        let active_frames_iter = pair.0.get_active_frames(pair.1);
+        for active in active_frames_iter.skip(1) {
+            dbg!(active);
+            if active >= *claim_end {
+                return true;
+            }
+            while let Some(next_request_frame) = tmp_iter.next() {
+                if *next_request_frame > active {
+                    return false;
+                }
+                if *next_request_frame == active {
+                    break;
+                }
+            }
+        }
+        return true;
+    }
 }
 
 #[cfg(test)]
