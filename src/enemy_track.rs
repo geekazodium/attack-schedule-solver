@@ -5,6 +5,7 @@ use crate::attack::Attack;
 
 mod attack_future_instance;
 mod complement_attack_request;
+mod enemy_track_attack_wrapper;
 
 #[derive(Debug)]
 pub struct EnemyTrack {
@@ -70,39 +71,18 @@ impl EnemyTrack {
             .get_start_frame(request_frame, first_actionable)
     }
     //commit possible future move
-    fn commit(&mut self, request_frame: u64, attack_index: usize) -> bool {
-        if let Some(attack_frame) = self.get_attack_frame(attack_index, request_frame) {
+    fn commit(&mut self, request: &mut ComplementAttackRequest, attack_index: usize) -> bool {
+        if let Some(attack_frame) = self.get_attack_frame(attack_index, request.start_frame()) {
             self.future_stack
                 .push(FutureMoveCommit::new(attack_index, attack_frame));
+            
             return true;
         }
         false
     }
     //uncommit move
-    fn uncommit(&mut self) -> bool {
+    fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
         self.future_stack.pop().is_some()
-    }
-}
-
-mod enemy_track_attack_wrapper {
-    use super::Attack;
-
-    #[derive(Debug)]
-    pub struct EnemyTrackAttack {
-        index: usize,
-        attack: Attack,
-    }
-
-    impl EnemyTrackAttack {
-        pub fn new(attack: Attack, index: usize) -> Self {
-            Self { attack, index }
-        }
-        pub fn get_attack(&self) -> &Attack {
-            &self.attack
-        }
-        pub fn get_index(&self) -> usize {
-            self.index
-        }
     }
 }
 
@@ -119,7 +99,7 @@ mod enemy_track_tests {
         ]);
         assert_eq!(
             mock_track
-                .can_meet_request(&ComplementAttackRequest::new(&vec![16, 24], 0, 100).unwrap())
+                .can_meet_request(&Attack::new(30, vec![], vec![20, 28]).into())
                 .len(),
             2
         );
@@ -131,14 +111,13 @@ mod enemy_track_tests {
             Attack::new(10, vec![8, 16], vec![2]),
             Attack::new(20, vec![8, 10, 16], vec![4]),
         ]);
-        let request_frames = vec![16, 24];
-        let request = ComplementAttackRequest::new(&request_frames, 0, 100).unwrap();
-        
+        let mock_lead_action = Attack::new(30, vec![], vec![16, 24]);
+        let mut request = mock_lead_action.into();
         let request_result = mock_track.can_meet_request(&request);
         assert!(!request_result.is_empty());
-        
-        assert!(mock_track.commit(request.start_frame(), request_result[0].get_index()));
-        assert!(mock_track.uncommit());
+
+        assert!(mock_track.commit(&mut request, request_result[0].get_index()));
+        assert!(mock_track.uncommit(&mut request));
     }
 
     #[test]
@@ -147,13 +126,15 @@ mod enemy_track_tests {
             Attack::new(10, vec![8, 16], vec![2]),
             Attack::new(20, vec![8, 10, 16], vec![4]),
         ]);
-        let request_frames = vec![16, 24];
-        let request = ComplementAttackRequest::new(&request_frames, 0, 100).unwrap();
-        
-        let request_result = mock_track.can_meet_request(&request);
+        let mock_lead_action = Attack::new(30, vec![], vec![16, 24]);
+
+        let request_result = mock_track.can_meet_request(&mock_lead_action.into());
         assert!(!request_result.is_empty());
-        
-        assert!(!mock_track.commit(7, request_result[0].get_index()));
+
+        assert!(!mock_track.commit(
+            &mut Attack::new(10, vec![], vec![3]).into(),
+            request_result[0].get_index()
+        ));
     }
 
     #[test]
@@ -163,9 +144,10 @@ mod enemy_track_tests {
             Attack::new(20, vec![12, 20], vec![4]),
         ]);
 
+        let mock_lead_action = Attack::new(25, vec![10, 16], vec![13, 29]);
         assert!(
             mock_track
-                .can_meet_request(&ComplementAttackRequest::new(&vec![19, 28], 0, 100).unwrap())
+                .can_meet_request(&mock_lead_action.into())
                 .is_empty()
         );
     }
