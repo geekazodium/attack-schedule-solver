@@ -92,7 +92,7 @@ impl ComplementAttackRequest {
         commit: &FutureMoveCommit,
         undo: bool,
     ) {
-        let mut index = self.request_offset;
+        let mut index = if undo { 0 } else { self.request_offset };
         for active in commit.get_active_frames(track) {
             dbg!(&self);
             if active >= self.claim_end_time() {

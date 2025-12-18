@@ -207,22 +207,30 @@ mod enemy_track_tests {
         ]);
 
         let src = Attack::new(25, vec![], vec![10, 18]);
-
         let mut src_request: ComplementAttackRequest = src.into();
+
         let can_meet = mock_track.can_meet_request(&src_request);
-
         assert_eq!(can_meet.len(), 2);
-
-        let second_opt: &EnemyTrackAttack = can_meet[1];
-        dbg!(&second_opt);
-        mock_track.commit(&mut src_request, second_opt.get_index());
+        mock_track.commit(&mut src_request, can_meet[1].get_index());
         assert!(src_request.next_unclaimed());
 
-        let new_can_meet = mock_track.can_meet_request(&src_request);
-
-        assert_eq!(new_can_meet.len(), 2);
-        dbg!(&new_can_meet);
-        mock_track.commit(&mut src_request, new_can_meet[0].get_index());
+        let can_meet = mock_track.can_meet_request(&src_request);
+        assert_eq!(can_meet.len(), 2);
+        mock_track.commit(&mut src_request, can_meet[0].get_index());
         assert!(!src_request.next_unclaimed());
+
+        mock_track.uncommit(&mut src_request);
+        src_request.prev_unclaimed();
+
+        let can_meet = mock_track.can_meet_request(&src_request);
+        assert_eq!(can_meet.len(), 2);
+        mock_track.commit(&mut src_request, can_meet[0].get_index());
+        assert!(!src_request.next_unclaimed());
+
+        assert!(mock_track.uncommit(&mut src_request));
+        src_request.prev_unclaimed();
+        assert!(mock_track.uncommit(&mut src_request));
+        src_request.prev_unclaimed();
+        dbg!(&src_request);
     }
 }
