@@ -1,3 +1,5 @@
+use std::ops::RangeFrom;
+
 use self::attack_future_instance::AttackFutureInstance;
 use self::complement_attack_request::ComplementAttackRequest;
 use self::enemy_track_attack_wrapper::EnemyTrackAttack;
@@ -26,8 +28,19 @@ impl FutureMoveCommit {
             move_index: attack_index,
         }
     }
+    fn get_attack<'a>(&self, parent_track: &'a EnemyTrack) -> &'a EnemyTrackAttack {
+        &parent_track.attacks[self.move_index]
+    }
+    pub fn get_active_frames<'a>(
+        &self,
+        parent_track: &'a EnemyTrack,
+    ) -> impl 'a + Iterator<Item = u64> {
+        self.get_attack(parent_track)
+            .get_attack()
+            .get_active_frames(self.frames_after_now)
+    }
     fn get_full_duration(&self, parent_track: &EnemyTrack) -> u64 {
-        parent_track.attacks[self.move_index]
+        self.get_attack(parent_track)
             .get_attack()
             .get_full_duration()
     }
@@ -37,10 +50,8 @@ impl EnemyTrack {
     pub fn new(attacks: Vec<Attack>) -> Self {
         let attacks = attacks
             .into_iter()
-            .scan(0, |a: &mut usize, b: Attack| {
-                *a += 1;
-                Some(enemy_track_attack_wrapper::EnemyTrackAttack::new(b, *a))
-            })
+            .zip(RangeFrom { start: 0 })
+            .map(|(a, index)| EnemyTrackAttack::new(a, index))
             .collect();
         Self {
             attacks,
@@ -73,16 +84,24 @@ impl EnemyTrack {
     //commit possible future move
     fn commit(&mut self, request: &mut ComplementAttackRequest, attack_index: usize) -> bool {
         if let Some(attack_frame) = self.get_attack_frame(attack_index, request.start_frame()) {
-            self.future_stack
-                .push(FutureMoveCommit::new(attack_index, attack_frame));
-            
+            let commit = FutureMoveCommit::new(attack_index, attack_frame);
+
+            request.apply_commit_claim(&self, &commit, false);
+
+            self.future_stack.push(commit);
+
             return true;
         }
         false
     }
     //uncommit move
     fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
-        self.future_stack.pop().is_some()
+        if let Some(commit) = self.future_stack.pop() {
+            request.apply_commit_claim(&self, &commit, true);
+
+            return true;
+        }
+        return false;
     }
 }
 
@@ -93,9 +112,9 @@ mod enemy_track_tests {
     #[test]
     fn can_meet_request_test() {
         let mock_track = EnemyTrack::new(vec![
+            Attack::new(20, vec![8, 10, 16], vec![4]),
             Attack::new(10, vec![8, 16], vec![2]),
             Attack::new(20, vec![12], vec![4]),
-            Attack::new(20, vec![8, 10, 16], vec![4]),
         ]);
         assert_eq!(
             mock_track
@@ -150,5 +169,33 @@ mod enemy_track_tests {
                 .can_meet_request(&mock_lead_action.into())
                 .is_empty()
         );
+    }
+
+    #[test]
+    fn can_meet_multuple_request() {
+        let mut mock_track = EnemyTrack::new(vec![
+            Attack::new(10, vec![1, 9], vec![2]),
+            Attack::new(13, vec![12], vec![4]),
+            // Attack::new(20, vec![8, 10, 16], vec![4]),
+        ]);
+
+        let src = Attack::new(30, vec![], vec![20, 28]);
+
+        let mut src_request: ComplementAttackRequest = src.into();
+        let can_meet = mock_track.can_meet_request(&src_request);
+
+        assert_eq!(can_meet.len(), 2);
+
+        let second_opt: &EnemyTrackAttack = can_meet[1];
+        dbg!(&second_opt);
+        mock_track.commit(&mut src_request, second_opt.get_index());
+        assert!(src_request.next_unclaimed());
+
+        let new_can_meet = mock_track.can_meet_request(&src_request);
+
+        assert_eq!(new_can_meet.len(), 2);
+        dbg!(&new_can_meet);
+        mock_track.commit(&mut src_request, new_can_meet[0].get_index());
+        assert!(!src_request.next_unclaimed());
     }
 }
