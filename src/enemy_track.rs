@@ -176,10 +176,38 @@ mod enemy_track_tests {
         let mut mock_track = EnemyTrack::new(vec![
             Attack::new(10, vec![1, 9], vec![2]),
             Attack::new(13, vec![12], vec![4]),
-            // Attack::new(20, vec![8, 10, 16], vec![4]),
         ]);
 
         let src = Attack::new(30, vec![], vec![20, 28]);
+
+        let mut src_request: ComplementAttackRequest = src.into();
+        let can_meet = mock_track.can_meet_request(&src_request);
+
+        assert_eq!(can_meet.len(), 2);
+
+        let second_opt: &EnemyTrackAttack = can_meet[1];
+        dbg!(&second_opt);
+        mock_track.commit(&mut src_request, second_opt.get_index());
+        assert!(src_request.next_unclaimed());
+
+        let new_can_meet = mock_track.can_meet_request(&src_request);
+
+        assert_eq!(new_can_meet.len(), 2);
+        dbg!(&new_can_meet);
+        mock_track.commit(&mut src_request, new_can_meet[0].get_index());
+        assert!(!src_request.next_unclaimed());
+    }
+
+
+    #[test]
+    fn can_deny_inapplicable_request() {
+        let mut mock_track = EnemyTrack::new(vec![
+            Attack::new(10, vec![1, 9], vec![2]),
+            Attack::new(6, vec![5], vec![4]),
+            Attack::new(13, vec![2, 4, 6], vec![4]),
+        ]);
+
+        let src = Attack::new(25, vec![], vec![10, 18]);
 
         let mut src_request: ComplementAttackRequest = src.into();
         let can_meet = mock_track.can_meet_request(&src_request);
