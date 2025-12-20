@@ -1,7 +1,7 @@
 use self::request_restore_point::RequestRestorePoint;
 use crate::attack::Attack;
 use crate::enemy_track::EnemyTrack;
-use crate::enemy_track::FutureMoveCommit;
+use crate::enemy_track::future_move_commit::FutureMoveCommit;
 mod request_restore_point;
 
 #[allow(unused)]

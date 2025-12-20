@@ -4,46 +4,17 @@ use self::attack_future_instance::AttackFutureInstance;
 use self::complement_attack_request::ComplementAttackRequest;
 use self::enemy_track_attack_wrapper::EnemyTrackAttack;
 use crate::attack::Attack;
+use crate::enemy_track::future_move_commit::FutureMoveCommit;
 
 mod attack_future_instance;
-mod complement_attack_request;
+pub mod complement_attack_request;
 mod enemy_track_attack_wrapper;
+pub mod future_move_commit;
 
 #[derive(Debug)]
 pub struct EnemyTrack {
     attacks: Vec<EnemyTrackAttack>,
     future_stack: Vec<FutureMoveCommit>,
-}
-
-#[derive(Debug)]
-pub struct FutureMoveCommit {
-    frames_after_now: u64,
-    move_index: usize,
-}
-
-impl FutureMoveCommit {
-    fn new(attack_index: usize, frames_after_now: u64) -> Self {
-        Self {
-            frames_after_now,
-            move_index: attack_index,
-        }
-    }
-    fn get_attack<'a>(&self, parent_track: &'a EnemyTrack) -> &'a EnemyTrackAttack {
-        &parent_track.attacks[self.move_index]
-    }
-    pub fn get_active_frames<'a>(
-        &self,
-        parent_track: &'a EnemyTrack,
-    ) -> impl 'a + Iterator<Item = u64> {
-        self.get_attack(parent_track)
-            .get_attack()
-            .get_active_frames(self.frames_after_now)
-    }
-    fn get_full_duration(&self, parent_track: &EnemyTrack) -> u64 {
-        self.get_attack(parent_track)
-            .get_attack()
-            .get_full_duration()
-    }
 }
 
 impl EnemyTrack {
@@ -81,9 +52,12 @@ impl EnemyTrack {
     pub fn can_meet_request_commits(
         &self,
         request: &ComplementAttackRequest,
-    ) -> Vec<FutureMoveCommit> {
+    ) -> Vec<future_move_commit::FutureMoveCommit> {
         self.can_meet_request_iter(request)
-            .map(|attack| self.create_future_move(request, attack).unwrap())
+            .map(|attack| {
+                self.create_future_move(request.start_frame(), attack)
+                    .unwrap()
+            })
             .collect()
     }
     //FIXME: bad mutability practice, request should never be changed here, so it should be immutable
@@ -101,8 +75,20 @@ impl EnemyTrack {
         request.restore(restore);
         collection
     }
+    fn last_future_stack_item(&self) -> Option<&FutureMoveCommit> {
+        self.future_stack.last()
+    }
+    pub fn last_queued_attack(&self) -> Option<&EnemyTrackAttack> {
+        self.last_future_stack_item()
+            .map(|commit| commit.get_attack(self))
+    }
+    pub fn last_queued_attack_as_request(&self) -> Option<ComplementAttackRequest> {
+        self.last_queued_attack()
+            .map(EnemyTrackAttack::get_attack)
+            .map(|attack| attack.into())
+    }
     pub fn first_actionable_frame(&self) -> u64 {
-        match self.future_stack.last() {
+        match self.last_future_stack_item() {
             Some(commit) => commit.get_full_duration(self),
             None => 0,
         }
@@ -115,11 +101,11 @@ impl EnemyTrack {
     }
     fn create_future_move(
         &self,
-        request: &ComplementAttackRequest,
+        start_frame: u64,
         attack: &EnemyTrackAttack,
     ) -> Option<FutureMoveCommit> {
         let attack_index = attack.get_index();
-        if let Some(attack_frame) = self.get_attack_frame(attack_index, request.start_frame()) {
+        if let Some(attack_frame) = self.get_attack_frame(attack_index, start_frame) {
             let commit = FutureMoveCommit::new(attack_index, attack_frame);
             return Some(commit);
         }
@@ -131,17 +117,25 @@ impl EnemyTrack {
         request: &mut ComplementAttackRequest,
         attack_index: usize,
     ) -> bool {
-        if let Some(commit) = self.create_future_move(request, &self.attacks[attack_index]) {
-            request.apply_commit_claim(self, &commit, false);
-
-            self.future_stack.push(commit);
-
+        if let Some(commit) =
+            self.create_future_move(request.start_frame(), &self.attacks[attack_index])
+        {
+            self.commit(request, commit);
             return true;
         }
         false
     }
+    pub fn commit(&mut self, request: &mut ComplementAttackRequest, commit: FutureMoveCommit) {
+        request.apply_commit_claim(self, &commit, false);
+        self.future_stack.push(commit);
+    }
+    pub fn commit_by_index(&mut self, attack_index: usize) -> bool {
+        let commit = FutureMoveCommit::new(attack_index, 0);
+        self.future_stack.push(commit);
+        return true;
+    }
     //uncommit move
-    fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
+    pub fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
         if let Some(commit) = self.future_stack.pop() {
             request.apply_commit_claim(self, &commit, true);
 
