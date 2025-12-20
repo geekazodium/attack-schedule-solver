@@ -6,6 +6,7 @@ pub struct Attack {
 }
 
 impl Attack {
+    #[must_use]
     pub fn new(duration: u64, active: Vec<u64>, request_frames: Vec<u64>) -> Self {
         Self {
             duration,
@@ -16,21 +17,26 @@ impl Attack {
     fn get_last_active(&self) -> Option<u64> {
         self.active.last().map(|x| self.duration - x)
     }
+    #[must_use]
     pub fn get_end_frame(&self) -> Option<u64> {
         self.get_last_active()
     }
+    #[must_use]
     pub fn get_full_duration(&self) -> u64 {
         self.duration
     }
+    #[must_use]
     pub fn get_cooldown(&self) -> u64 {
         self.get_last_active().unwrap_or(self.duration)
     }
+    #[must_use]
     pub fn get_start_frame(&self, request_frame: u64, first_actionable: u64) -> Option<u64> {
         self.active
             .first()
             .filter(|first_active| (**first_active + first_actionable <= request_frame))
             .map(|x| request_frame - x)
     }
+    #[must_use]
     pub fn active_request_frames(&self) -> &Vec<u64> {
         &self.active_request_frames
     }

@@ -4,7 +4,6 @@ use crate::enemy_track::EnemyTrack;
 use crate::enemy_track::future_move_commit::FutureMoveCommit;
 mod request_restore_point;
 
-#[allow(unused)]
 #[derive(Debug)]
 pub struct ComplementAttackRequest {
     request_frames: Vec<u64>,
@@ -65,8 +64,12 @@ impl ComplementAttackRequest {
     pub(crate) fn claim_end_time(&self) -> u64 {
         self.request_source_claim_end
     }
+    #[must_use]
     pub fn get_restore_point(&self) -> RequestRestorePoint {
         RequestRestorePoint::new(self.request_offset)
+    }
+    pub fn restore(&mut self, position: &RequestRestorePoint) {
+        self.request_offset = position.get();
     }
     pub fn skip(&mut self) -> bool {
         let start = self.request_offset;
@@ -74,14 +77,10 @@ impl ComplementAttackRequest {
             self.request_offset += 1;
             if self.next_unclaimed() {
                 return true;
-            } else {
-                self.request_offset = start;
             }
+            self.request_offset = start;
         }
         false
-    }
-    pub fn restore(&mut self, position: RequestRestorePoint) {
-        self.request_offset = position.get();
     }
     //attempts to go to the next unclaimed item,
     //returns false if there isn't one.
@@ -95,17 +94,18 @@ impl ComplementAttackRequest {
         self.request_offset -= 1;
         false
     }
-    //inverse of the go to next unclaimed, should undo any result of previous if
-    //run after changes are uncommitted.
-    pub(super) fn prev_unclaimed(&mut self) {
-        while self.request_offset > 0 {
-            self.request_offset -= 1;
-            if self.taken_requests[self.request_offset] {
-                self.request_offset += 1;
-                break;
-            }
-        }
-    }
+    // do I delete this?
+    // //inverse of the go to next unclaimed, should undo any result of previous if
+    // //run after changes are uncommitted.
+    // pub(super) fn prev_unclaimed(&mut self) {
+    //     while self.request_offset > 0 {
+    //         self.request_offset -= 1;
+    //         if self.taken_requests[self.request_offset] {
+    //             self.request_offset += 1;
+    //             break;
+    //         }
+    //     }
+    // }
     pub(super) fn apply_commit_claim(
         &mut self,
         track: &EnemyTrack,
@@ -202,7 +202,7 @@ mod complement_attack_request_tests {
             req.iter_skip_start().map(|x| *x).collect::<Vec<u64>>(),
             vec![40, 90]
         );
-        req.restore(restore);
+        req.restore(&restore);
 
         assert_eq!(
             req.iter_skip_start().map(|x| *x).collect::<Vec<u64>>(),
