@@ -65,17 +65,20 @@ impl ComplementAttackRequest {
     pub(crate) fn claim_end_time(&self) -> u64 {
         self.request_source_claim_end
     }
-    pub fn skip(&mut self) -> Option<RequestRestorePoint> {
+    pub fn get_restore_point(&self) -> RequestRestorePoint {
+        RequestRestorePoint::new(self.request_offset)
+    }
+    pub fn skip(&mut self) -> bool {
         let start = self.request_offset;
         if self.request_offset + 1 < self.taken_requests.len() {
             self.request_offset += 1;
             if self.next_unclaimed() {
-                return Some(RequestRestorePoint::new(start));
+                return true;
             } else {
                 self.request_offset = start;
             }
         }
-        None
+        false
     }
     pub fn restore(&mut self, position: RequestRestorePoint) {
         self.request_offset = position.get();
@@ -186,7 +189,8 @@ mod complement_attack_request_tests {
         req.taken_requests[2] = true;
         req.taken_requests[0] = true;
 
-        let restore = req.skip();
+        let restore = req.get_restore_point();
+        assert!(req.skip());
         assert_eq!(
             req.iter_skip_start().map(|x| *x).collect::<Vec<u64>>(),
             vec![90]
@@ -198,7 +202,7 @@ mod complement_attack_request_tests {
             req.iter_skip_start().map(|x| *x).collect::<Vec<u64>>(),
             vec![40, 90]
         );
-        req.restore(restore.unwrap());
+        req.restore(restore);
 
         assert_eq!(
             req.iter_skip_start().map(|x| *x).collect::<Vec<u64>>(),
