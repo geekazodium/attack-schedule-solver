@@ -4,23 +4,23 @@ use crate::enemy_track::EnemyTrack;
 use crate::enemy_track::complement_attack_request::ComplementAttackRequest;
 
 #[derive(Debug)]
-pub(crate) struct Solver {
-    pub(crate) lead_track: EnemyTrack,
-    pub(crate) other_tracks: Vec<EnemyTrack>,
+pub struct Solver {
+    lead_track: EnemyTrack,
+    other_tracks: Vec<EnemyTrack>,
 }
 
 #[allow(unused)]
 impl Solver {
-    pub(crate) fn new(lead: EnemyTrack) -> Self {
+    pub fn new(lead: EnemyTrack) -> Self {
         Self {
             lead_track: lead,
             other_tracks: vec![],
         }
     }
-    pub(crate) fn add_track(&mut self, track: EnemyTrack) {
+    pub fn add_track(&mut self, track: EnemyTrack) {
         self.other_tracks.push(track);
     }
-    pub(crate) fn solve(&mut self, hasher: &mut impl SolverRandomState) {
+    pub fn solve(&mut self, hasher: &mut impl SolverRandomState) {
         let mut request: ComplementAttackRequest = self
             .lead_track
             .last_queued_attack_as_request()
