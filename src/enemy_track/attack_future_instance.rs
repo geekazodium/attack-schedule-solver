@@ -31,7 +31,6 @@ impl<'a> AttackFutureInstance<'a> {
         let mut request_iter = request.iter_skip_start();
         let active_frames_iter = self.active_frame_times();
         for active in active_frames_iter.skip(1) {
-            dbg!(active);
             //if outside of current attack's claim, definitely done.
             if active >= request.claim_end_time() {
                 return true;

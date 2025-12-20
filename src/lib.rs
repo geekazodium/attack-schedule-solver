@@ -5,6 +5,9 @@ mod solver;
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+    use std::time::Instant;
+
     use crate::attack::Attack;
     use crate::default_hasher_random::HashRandom;
     use crate::enemy_track::EnemyTrack;
@@ -28,18 +31,28 @@ mod tests {
         let mut lead_track = EnemyTrack::new(vec![
             Attack::new(30, vec![15, 25], vec![20]),
             Attack::new(40, vec![38], vec![20, 30]),
+            Attack::new(80, vec![38], vec![20, 30, 60]),
         ]);
 
-        assert!(lead_track.commit_by_index(0));
+        assert!(lead_track.commit_by_index(2));
 
         let mut solver = Solver::new(lead_track);
 
-        solver.add_track(EnemyTrack::new(vec![
-            Attack::new(30, vec![15, 25], vec![20]),
-            Attack::new(40, vec![10], vec![20, 30]),
-        ]));
+        for _ in 0..1000{
+            solver.add_track(EnemyTrack::new(vec![
+                Attack::new(30, vec![15, 25], vec![20]),
+                Attack::new(40, vec![10], vec![20, 30]),
+                Attack::new(40, vec![20], vec![30]),
+                Attack::new(40, vec![30], vec![20]),
+            ]));
+        }
 
+        let now = Instant::now();
         solver.solve(&mut random);
-        dbg!(&solver);
+        let elapsed = Instant::now() - now;
+        dbg!(elapsed);
+        //cursed performance target check
+        assert!(elapsed < Duration::from_millis(5));
+        // dbg!(&solver);
     }
 }

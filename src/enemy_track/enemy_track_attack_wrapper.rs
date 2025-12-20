@@ -8,7 +8,6 @@ pub struct EnemyTrackAttack {
 
 impl EnemyTrackAttack {
     pub fn new(attack: Attack, index: usize) -> Self {
-        dbg!(index);
         Self { index, attack }
     }
     pub fn get_attack(&self) -> &Attack {
