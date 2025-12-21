@@ -84,7 +84,7 @@ impl ComplementAttackRequest {
     }
     //attempts to go to the next unclaimed item,
     //returns false if there isn't one.
-    pub(super) fn next_unclaimed(&mut self) -> bool {
+    pub fn next_unclaimed(&mut self) -> bool {
         while self.request_offset < self.request_frames.len() {
             if !self.taken_requests[self.request_offset] {
                 return true;
@@ -114,7 +114,7 @@ impl ComplementAttackRequest {
     ) {
         let mut index = if undo { 0 } else { self.request_offset };
         for active in commit.get_active_frames(track) {
-            dbg!(&self);
+            // dbg!(&self);
             if active >= self.claim_end_time() {
                 return;
             }
