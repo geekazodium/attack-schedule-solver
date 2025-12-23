@@ -18,6 +18,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Cache Rust Dependencies
+      id: cache-rust-deps
       uses: actions/cache@v4
       env: 
         cache-name: "rust dependencies"
@@ -26,7 +27,7 @@ jobs:
           ${{env.RUST_DIR}}/debug/.fingerprint
           ${{env.RUST_DIR}}/debug/build
           ${{env.RUST_DIR}}/debug/deps
-        restore-keys: ${{ runner.os }}-build-rust
+        key: ${{ runner.os }}-build-rust
     - name: Build
       working-directory: ${{env.RUST_DIR}}
       run: cargo build --verbose
