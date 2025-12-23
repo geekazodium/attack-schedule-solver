@@ -7,6 +7,7 @@ on:
     branches: [ "main" ]
 
 env:
+  RUST_DIR: rust-solver/
   CARGO_TERM_COLOR: always
 
 jobs:
@@ -17,6 +18,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
+      working-directory: ${{env.RUST_DIR}}
       run: cargo build --verbose
     - name: Run tests
+      working-directory: ${{env.RUST_DIR}}
       run: cargo test --verbose
