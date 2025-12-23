@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://dbmqb5jaq1ajk"]
+
+[sub_resource type="EnemyTrack" id="EnemyTrack_7dm0k"]
+
+[sub_resource type="EnemyTrack" id="EnemyTrack_ig7tw"]
+
+[node name="Main" type="Node2D"]
+
+[node name="SolverInterface" type="SolverInterface" parent="."]
+tracks = Array[EnemyTrack]([SubResource("EnemyTrack_7dm0k"), SubResource("EnemyTrack_ig7tw")])

@@ -1,0 +1,14 @@
+[configuration]
+entry_symbol = "gdext_rust_init"
+compatibility_minimum = 4.1
+reloadable = true
+
+[libraries]
+linux.debug.x86_64 =     "res://../rust-solver/target/debug/libattack_scheduler.so"
+linux.release.x86_64 =   "res://../rust-solver/target/release/libattack_scheduler.so"
+windows.debug.x86_64 =   "res://../rust-solver/target/debug/attack_scheduler.dll"
+windows.release.x86_64 = "res://../rust-solver/target/release/attack_scheduler.dll"
+macos.debug =            "res://../rust-solver/target/debug/libattack_scheduler.dylib"
+macos.release =          "res://../rust-solver/target/release/libattack_scheduler.dylib"
+macos.debug.arm64 =      "res://../rust-solver/target/debug/libattack_scheduler.dylib"
+macos.release.arm64 =    "res://../rust-solver/target/release/libattack_scheduler.dylib"

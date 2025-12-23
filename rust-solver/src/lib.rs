@@ -1,15 +1,48 @@
+use godot::classes::INode;
+use godot::classes::Node;
+use godot::classes::Resource;
+use godot::classes::class_macros::private::virtuals::Os::Array;
+use godot::global::godot_print;
+use godot::obj::Gd;
+use godot::prelude::Base;
+use godot::prelude::godot_api;
+
 use godot::init::ExtensionLibrary;
 use godot::init::gdextension;
+use godot::prelude::GodotClass;
 
-pub mod attack;
+pub(crate) mod attack;
 mod default_hasher_random;
-pub mod enemy_track;
+pub(crate) mod enemy_track;
 mod solver;
 
 struct AttackSchedulerExtension;
 
 #[gdextension]
-unsafe impl ExtensionLibrary for AttackSchedulerExtension{}
+unsafe impl ExtensionLibrary for AttackSchedulerExtension {}
+
+#[derive(GodotClass)]
+#[class(base=Node, init)]
+struct SolverInterface {
+    base: Base<Node>,
+    #[export]
+    tracks: Array<Gd<EnemyTrack>>
+}
+
+#[godot_api]
+impl INode for SolverInterface {
+    fn process(&mut self, _delta: f64) {
+        godot_print!("aaaa");
+    }
+}
+
+#[derive(GodotClass)]
+#[class(base=Resource, init)]
+struct EnemyTrack{
+    base: Base<Resource>,
+    #[export]
+    tracks: i64
+}
 
 #[cfg(test)]
 mod tests {
