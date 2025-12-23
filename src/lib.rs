@@ -1,7 +1,15 @@
+use godot::init::ExtensionLibrary;
+use godot::init::gdextension;
+
 pub mod attack;
 mod default_hasher_random;
 pub mod enemy_track;
 mod solver;
+
+struct AttackSchedulerExtension;
+
+#[gdextension]
+unsafe impl ExtensionLibrary for AttackSchedulerExtension{}
 
 #[cfg(test)]
 mod tests {
