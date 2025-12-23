@@ -24,9 +24,9 @@ jobs:
         cache-name: "rust dependencies"
       with:
         path: |
-          ${{env.RUST_DIR}}/debug/.fingerprint
-          ${{env.RUST_DIR}}/debug/build
-          ${{env.RUST_DIR}}/debug/deps
+          ${{env.RUST_DIR}}/target/debug/.fingerprint
+          ${{env.RUST_DIR}}/target/debug/build
+          ${{env.RUST_DIR}}/target/debug/deps
         key: ${{ runner.os }}-build-rust
     - name: Build
       working-directory: ${{env.RUST_DIR}}
