@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::num::NonZeroI64;
 
 use godot::classes::INode;
 use godot::classes::Node;
@@ -35,7 +35,6 @@ struct SolverInterface {
     #[export]
     tracks: Array<Gd<ExternEnemyTrack>>,
     solver: Solver,
-    solver_indexes: HashMap<i64, usize>,
 }
 
 #[godot_api]
@@ -44,15 +43,28 @@ impl INode for SolverInterface {
         Self {
             base,
             tracks: Array::new(),
-            solver: Solver::new(EnemyTrack::new(vec![])),
-            solver_indexes: HashMap::new(),
+            solver: Solver::new(),
         }
     }
-    fn process(&mut self, _delta: f64) {
+    fn physics_process(&mut self, _delta: f64) {
+        self.solver.tick();
         if self.solver.solve(&mut GodotRandom {}).is_some() {
         } else {
             godot_warn!("no attack in lead track, failed to create request");
         }
+    }
+}
+
+#[godot_api]
+impl SolverInterface {
+    #[func]
+    fn add_track(&mut self, track: Gd<ExternEnemyTrack>) {
+        self.solver
+            .add_track(track.bind().get_id(), EnemyTrack::new(vec![]));
+    }
+    #[func]
+    fn remove_track(&mut self, track: Gd<ExternEnemyTrack>) {
+        self.solver.remove_track(track.bind().get_id());
     }
 }
 
@@ -73,8 +85,9 @@ struct ExternEnemyTrack {
 }
 
 impl ExternEnemyTrack {
-    fn get_id(&self) -> i64 {
-        self.base().instance_id().to_i64()
+    fn get_id(&self) -> NonZeroI64 {
+        NonZeroI64::new(self.base().instance_id().to_i64())
+            .expect("instance ID was somehow 0, panicking")
     }
 }
 
@@ -85,6 +98,8 @@ mod tests {
     use crate::enemy_track::EnemyTrack;
     use crate::solver::Solver;
     use crate::solver::SolverRandomState;
+    use std::i64;
+    use std::num::NonZeroI64;
     use std::time::Duration;
     use std::time::Instant;
 
@@ -110,15 +125,21 @@ mod tests {
 
         assert!(lead_track.commit_by_index(2));
 
-        let mut solver = Solver::new(lead_track);
+        let mut solver = Solver::new();
+        let lead_key = NonZeroI64::new(i64::MAX).unwrap();
+        solver.add_track(lead_key, lead_track);
+        solver.change_lead(lead_key);
 
-        for _ in 0..2 {
-            solver.add_track(EnemyTrack::new(vec![
-                Attack::new(30, vec![15, 25], vec![20]),
-                Attack::new(40, vec![10], vec![20, 30]),
-                Attack::new(40, vec![20], vec![30]),
-                Attack::new(40, vec![30], vec![20]),
-            ]));
+        for count in 0..2 {
+            solver.add_track(
+                NonZeroI64::new(count + 1).unwrap(),
+                EnemyTrack::new(vec![
+                    Attack::new(30, vec![15, 25], vec![20]),
+                    Attack::new(40, vec![10], vec![20, 30]),
+                    Attack::new(40, vec![20], vec![30]),
+                    Attack::new(40, vec![30], vec![20]),
+                ]),
+            );
         }
 
         let now = Instant::now();
