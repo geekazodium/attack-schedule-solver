@@ -1,15 +1,22 @@
+use std::collections::HashMap;
+
 use godot::classes::INode;
 use godot::classes::Node;
 use godot::classes::Resource;
 use godot::classes::class_macros::private::virtuals::Os::Array;
-use godot::global::godot_print;
+use godot::global::godot_warn;
 use godot::obj::Gd;
+use godot::obj::WithBaseField;
 use godot::prelude::Base;
 use godot::prelude::godot_api;
 
 use godot::init::ExtensionLibrary;
 use godot::init::gdextension;
 use godot::prelude::GodotClass;
+
+use crate::enemy_track::EnemyTrack;
+use crate::solver::Solver;
+use crate::solver::SolverRandomState;
 
 pub(crate) mod attack;
 mod default_hasher_random;
@@ -22,26 +29,53 @@ struct AttackSchedulerExtension;
 unsafe impl ExtensionLibrary for AttackSchedulerExtension {}
 
 #[derive(GodotClass)]
-#[class(base=Node, init)]
+#[class(base=Node)]
 struct SolverInterface {
     base: Base<Node>,
     #[export]
-    tracks: Array<Gd<EnemyTrack>>
+    tracks: Array<Gd<ExternEnemyTrack>>,
+    solver: Solver,
+    solver_indexes: HashMap<i64, usize>,
 }
 
 #[godot_api]
 impl INode for SolverInterface {
+    fn init(base: Base<Node>) -> Self {
+        Self {
+            base,
+            tracks: Array::new(),
+            solver: Solver::new(EnemyTrack::new(vec![])),
+            solver_indexes: HashMap::new(),
+        }
+    }
     fn process(&mut self, _delta: f64) {
-        godot_print!("aaaa");
+        if self.solver.solve(&mut GodotRandom {}).is_some() {
+        } else {
+            godot_warn!("no attack in lead track, failed to create request");
+        }
+    }
+}
+
+struct GodotRandom {}
+
+impl SolverRandomState for GodotRandom {
+    fn next_in_range(&mut self, max: usize) -> usize {
+        godot::global::randi_range(0, max as i64) as usize
     }
 }
 
 #[derive(GodotClass)]
 #[class(base=Resource, init)]
-struct EnemyTrack{
+struct ExternEnemyTrack {
     base: Base<Resource>,
     #[export]
-    tracks: i64
+    tracks: i64,
+}
+
+impl ExternEnemyTrack {
+    fn get_id(&self) -> i64 {
+        self.base().instance_id().to_i64()
+    }
 }
 
 #[cfg(test)]

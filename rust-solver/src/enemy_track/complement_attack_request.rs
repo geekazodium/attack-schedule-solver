@@ -10,6 +10,7 @@ pub struct ComplementAttackRequest {
     taken_requests: Vec<bool>,
     request_offset: usize,
     request_source_claim_end: u64,
+    request_start_frame_offset: u64
 }
 
 impl From<&Attack> for Option<ComplementAttackRequest> {
@@ -46,6 +47,7 @@ impl ComplementAttackRequest {
             taken_requests: vec.iter().map(|_| false).collect(),
             request_frames: vec,
             request_source_claim_end,
+            request_start_frame_offset: 0
         })
     }
     pub(crate) fn start_frame(&self) -> u64 {
@@ -62,7 +64,7 @@ impl ComplementAttackRequest {
             .filter_map(|pair| if *pair.1 { None } else { Some(pair.0) })
     }
     pub(crate) fn claim_end_time(&self) -> u64 {
-        self.request_source_claim_end
+        self.request_source_claim_end + self.request_start_frame_offset
     }
     #[must_use]
     pub fn get_restore_point(&self) -> RequestRestorePoint {

@@ -14,19 +14,23 @@ pub mod future_move_commit;
 #[derive(Debug)]
 pub struct EnemyTrack {
     attacks: Vec<EnemyTrackAttack>,
+    attacks_validitiy: Vec<bool>,
     future_stack: Vec<FutureMoveCommit>,
 }
 
 impl EnemyTrack {
+    #[allow(unused)]
     #[must_use]
     pub fn new(attacks: Vec<Attack>) -> Self {
-        let attacks = attacks
+        let attacks: Vec<EnemyTrackAttack> = attacks
             .into_iter()
             .zip(RangeFrom { start: 0 })
             .map(|(a, index)| EnemyTrackAttack::new(a, index))
             .collect();
+        let attacks_validitiy = (0..attacks.len()).map(|_| true).collect();
         Self {
             attacks,
+            attacks_validitiy,
             future_stack: vec![],
         }
     }
@@ -37,6 +41,8 @@ impl EnemyTrack {
         let request_frame = request.start_frame();
         self.attacks
             .iter()
+            .zip(&self.attacks_validitiy)
+            .filter_map(move |(attack, valid)| if *valid { Some(attack) } else { None })
             .filter_map(move |attack| {
                 AttackFutureInstance::try_create(
                     attack,
