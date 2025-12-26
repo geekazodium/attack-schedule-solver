@@ -1,0 +1,14 @@
+[gd_resource type="ExternEnemyTrack" load_steps=3 format=3 uid="uid://xd5ssh3iukl2"]
+
+[sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_jltck"]
+frames = Array[int]([15, 27])
+requests = Array[int]([20, 40])
+duration = 45
+
+[sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_jh2fn"]
+frames = Array[int]([27, 0])
+requests = Array[int]([20, 28])
+duration = 59
+
+[resource]
+attacks = Array[ExternEnemyAttack]([SubResource("ExternEnemyAttack_jltck"), SubResource("ExternEnemyAttack_jh2fn")])

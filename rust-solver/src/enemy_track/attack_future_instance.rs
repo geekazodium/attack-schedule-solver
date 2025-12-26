@@ -37,10 +37,10 @@ impl<'a> AttackFutureInstance<'a> {
             }
             let mut matched = false;
             for next_request_frame in request_iter.by_ref() {
-                if *next_request_frame > active {
+                if next_request_frame > active {
                     break;
                 }
-                if *next_request_frame == active {
+                if next_request_frame == active {
                     matched = true;
                     break;
                 }

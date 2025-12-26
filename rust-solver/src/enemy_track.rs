@@ -38,7 +38,7 @@ impl EnemyTrack {
         &self,
         request: &ComplementAttackRequest,
     ) -> impl Iterator<Item = &EnemyTrackAttack> {
-        let request_frame = request.start_frame();
+        let request_frame = request.first_req_frame();
         self.attacks
             .iter()
             .zip(&self.attacks_validitiy)
@@ -60,7 +60,7 @@ impl EnemyTrack {
     #[must_use]
     pub fn possible_now_commits(&self, request: &ComplementAttackRequest) -> Vec<FutureMoveCommit> {
         self.possible_now_moves_iter(request)
-            .filter_map(|attack| self.create_future_move(request.start_frame(), attack))
+            .filter_map(|attack| self.create_future_move(request.first_req_frame(), attack))
             .collect()
     }
     //FIXME: bad mutability practice, request should never be changed here, so it should be immutable
@@ -81,15 +81,13 @@ impl EnemyTrack {
     fn last_future_stack_item(&self) -> Option<&FutureMoveCommit> {
         self.future_stack.last()
     }
-    #[must_use]
-    pub fn last_queued_attack(&self) -> Option<&EnemyTrackAttack> {
-        self.last_future_stack_item()
-            .map(|commit| commit.get_attack(self))
-    }
     pub fn last_queued_attack_as_request(&self) -> Option<ComplementAttackRequest> {
-        self.last_queued_attack()
-            .map(EnemyTrackAttack::get_attack)
-            .map(Into::into)
+        self.last_future_stack_item().map(|commit| {
+            commit
+                .get_attack(self)
+                .get_attack()
+                .to_request(commit.frames_after_now)
+        })
     }
     #[must_use]
     pub fn first_actionable_frame(&self) -> u64 {
@@ -170,7 +168,8 @@ mod enemy_track_tests {
             Attack::new(10, vec![8, 16], vec![]),
             Attack::new(20, vec![12], vec![]),
         ]);
-        let mock_request: ComplementAttackRequest = Attack::new(30, vec![], vec![20, 28]).into();
+        let mock_request: ComplementAttackRequest =
+            Attack::new(30, vec![], vec![20, 28]).to_request(0);
 
         assert_commits_length(&mock_request, &mock_track, 2);
     }
@@ -182,7 +181,7 @@ mod enemy_track_tests {
             Attack::new(20, vec![8, 10, 16], vec![4]),
         ]);
         let mock_lead_action = Attack::new(30, vec![], vec![16, 24]);
-        let mut mock_request = mock_lead_action.into();
+        let mut mock_request = mock_lead_action.to_request(0);
 
         commit_and_assert(&mut mock_request, &mut mock_track, 0, 1, false);
 
@@ -199,7 +198,7 @@ mod enemy_track_tests {
         let mock_lead_action = Attack::new(25, vec![10, 16], vec![13, 29]);
         assert!(
             mock_track
-                .possible_now_moves(&mock_lead_action.into())
+                .possible_now_moves(&mock_lead_action.to_request(0))
                 .is_empty()
         );
     }
@@ -212,7 +211,7 @@ mod enemy_track_tests {
         ]);
 
         let src = Attack::new(30, vec![], vec![20, 28]);
-        let mut mock_request: ComplementAttackRequest = src.into();
+        let mut mock_request: ComplementAttackRequest = src.to_request(0);
 
         commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
         commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, false);
@@ -227,7 +226,7 @@ mod enemy_track_tests {
         ]);
 
         let src = Attack::new(25, vec![], vec![10, 18]);
-        let mut mock_request: ComplementAttackRequest = src.into();
+        let mut mock_request: ComplementAttackRequest = src.to_request(0);
 
         let restore_point_a = mock_request.get_restore_point();
         commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
@@ -257,7 +256,7 @@ mod enemy_track_tests {
         ]);
 
         let mock_lead_track = Attack::new(25, vec![], vec![10, 18]);
-        let mut mock_request: ComplementAttackRequest = mock_lead_track.into();
+        let mut mock_request: ComplementAttackRequest = mock_lead_track.to_request(0);
 
         let can_meet = mock_track.possible_future_commits(&mut mock_request);
         dbg!(&can_meet);

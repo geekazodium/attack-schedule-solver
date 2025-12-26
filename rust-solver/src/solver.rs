@@ -32,6 +32,9 @@ impl Solver {
     pub fn remove_track(&mut self, index: NonZeroI64) {
         self.tracks.remove(&index);
     }
+    pub fn get_track_mut(&mut self, index: NonZeroI64) -> &mut EnemyTrack {
+        self.tracks.get_mut(&index).unwrap()
+    }
     //returns true if the lead request is cleared or if there was no lead request
     fn try_clear_lead_request(&mut self) -> bool {
         if let Some(req) = &self.lead_request {

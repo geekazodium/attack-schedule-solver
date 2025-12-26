@@ -1,3 +1,5 @@
+use crate::enemy_track::complement_attack_request::ComplementAttackRequest;
+
 #[derive(Debug)]
 pub struct Attack {
     duration: u64,
@@ -42,6 +44,13 @@ impl Attack {
     }
     pub fn get_active_frames(&self, start: u64) -> impl Iterator<Item = u64> {
         self.active.iter().map(move |x| x + start)
+    }
+    pub fn to_request(&self, start: u64) -> ComplementAttackRequest {
+        ComplementAttackRequest::new(
+            self.active_request_frames().clone(),
+            self.get_full_duration(),
+            start,
+        )
     }
 }
 
