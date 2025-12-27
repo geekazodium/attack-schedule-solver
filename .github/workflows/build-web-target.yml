@@ -1,0 +1,168 @@
+# MIT License
+
+# Copyright (c) 2018 BARICHELLO, LokiMcKay
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+name: 'Godot CI Web'
+on: 
+  push:
+    branches: 
+      - main
+
+# NOTE: If your `project.godot` is at the repository root, set `PROJECT_PATH` below to ".".
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: 4.5
+  EXPORT_NAME: web-prototype-2
+  PROJECT_PATH: ./
+  RUST_DIR: rust-solver
+  CARGO_PROJECT_NAME: attack_scheduler
+
+jobs:
+  build-rust-wasm32:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_PATH: target/wasm32-unknown-emscripten/release/
+    steps:
+    #code taken from https://github.com/deltasiege/godot-rapier-3d/blob/9c26657e074d2b09ec3e2323ceac3c2ddf8603a4/.github/workflows/jobs-build.yml
+    - uses: actions/checkout@v4
+    - uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: 3.1.74
+        actions-cache-folder: "emsdk-cache"
+
+    - name: Verify Emscripten
+      run: emcc -v
+
+    - name: Install Nightly
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+        targets: wasm32-unknown-emscripten
+
+    - name: Install Nightly
+      run: |
+        rustup toolchain install nightly
+        rustup component add rust-src --toolchain nightly
+        rustup target add wasm32-unknown-emscripten --toolchain nightly
+
+    - name: caches rust directory
+      id: cache-rust-deps-release
+      uses: actions/cache@v4
+      env: 
+        cache-name: "rust dependencies"
+      with:
+        path: |
+          ${{env.RUST_DIR}}/${{env.BUILD_PATH}}.fingerprint
+          ${{env.RUST_DIR}}/${{env.BUILD_PATH}}build
+          ${{env.RUST_DIR}}/${{env.BUILD_PATH}}deps
+        key: ${{ runner.os }}-build-rust-release-linux
+
+    - name: build rust
+      run: cargo +nightly build --features nothreads -Zbuild-std --target wasm32-unknown-emscripten --release
+      working-directory: ${{env.RUST_DIR}}
+      env: 
+        RUSTFLAGS: -C link-args=-sSIDE_MODULE=2 -C target-feature=+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0
+    # borrowed code end
+    - name: upload ${{env.EXPORT_NAME}}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{env.RUST_DIR}}-wasm32
+        path: ${{env.RUST_DIR}}/${{env.BUILD_PATH}}${{env.CARGO_PROJECT_NAME}}.wasm
+    
+  build-rust-linux:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_PATH: target/release/
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: caches rust directory
+      id: cache-rust-deps-release
+      uses: actions/cache@v4
+      env: 
+        cache-name: "rust dependencies"
+      with:
+        path: |
+          ${{env.RUST_DIR}}/${{env.BUILD_PATH}}.fingerprint
+          ${{env.RUST_DIR}}/${{env.BUILD_PATH}}build
+          ${{env.RUST_DIR}}/${{env.BUILD_PATH}}deps
+        key: ${{ runner.os }}-build-rust-release-linux
+    - name: Build
+      run: cargo build --release
+      working-directory: ${{env.RUST_DIR}}
+
+    - name: upload ${{env.EXPORT_NAME}}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{env.RUST_DIR}}-linux-build-only
+        path: ${{env.RUST_DIR}}/${{env.BUILD_PATH}}lib${{env.CARGO_PROJECT_NAME}}.so
+    
+  export-web:
+    name: Web Export
+    needs: [build-rust-wasm32, build-rust-linux]
+    runs-on: ubuntu-22.04  # Use 22.04 with godot 4
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Setup
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates/
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+      - name: Pull tileset-celluar-automata-wasm32
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{env.RUST_DIR}}-wasm32
+      - name: Move ${{env.RUST_DIR}}-wasm32
+        run: |
+          mkdir -p ${{env.RUST_DIR}}/target/wasm32-unknown-emscripten/release/
+          mv ./${{env.CARGO_PROJECT_NAME}}.wasm ${{env.RUST_DIR}}/target/wasm32-unknown-emscripten/release/${{env.CARGO_PROJECT_NAME}}.wasm
+      - name: Pull tileset-celluar-automata-linux-build-only
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{env.RUST_DIR}}-linux-build-only
+      - name: Move ${{env.RUST_DIR}}-linux-build-only
+        run: |
+          mkdir -p ${{env.RUST_DIR}}/target/debug
+          mv ./lib${{env.CARGO_PROJECT_NAME}}.so ${{env.RUST_DIR}}/target/debug/lib${{env.CARGO_PROJECT_NAME}}.so
+      - name: Web Build
+        run: |
+          mkdir -v -p build/web
+          EXPORT_DIR="$(readlink -f build)"
+          cd $PROJECT_PATH
+          godot --headless --verbose --export-release "Web" "$EXPORT_DIR/web/index.html"
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: web
+      #     path: build/web
+      - name: Install rsync 📚
+        run: |
+          apt-get update && apt-get install -y rsync
+      - name: Deploy to GitHub Pages 🚀
+        uses: JamesIves/github-pages-deploy-action@releases/v4
+        with:
+          branch: gh-pages # The branch the action should deploy to.
+          folder: build/web # The folder the action should deploy.

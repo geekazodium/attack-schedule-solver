@@ -12,3 +12,8 @@ macos.debug =            "res://../rust-solver/target/debug/libattack_scheduler.
 macos.release =          "res://../rust-solver/target/release/libattack_scheduler.dylib"
 macos.debug.arm64 =      "res://../rust-solver/target/debug/libattack_scheduler.dylib"
 macos.release.arm64 =    "res://../rust-solver/target/release/libattack_scheduler.dylib"
+
+web.debug.threads.wasm32 = "res://../rust-solver/target/wasm32-unknown-emscripten/debug/attack_scheduler.threads.wasm"
+web.release.threads.wasm32 = "res://../rust-solver/target/wasm32-unknown-emscripten/release/attack_scheduler.threads.wasm"
+web.debug.wasm32 = "res://../rust-solver/target/wasm32-unknown-emscripten/debug/attack_scheduler.wasm"
+web.release.wasm32 = "res://../rust-solver/target/wasm32-unknown-emscripten/release/attack_scheduler.wasm"

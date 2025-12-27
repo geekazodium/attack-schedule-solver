@@ -18,13 +18,15 @@ script = ExtResource("3_h2yge")
 attack_track = ExtResource("1_ig7tw")
 
 [node name="Track2" type="Node2D" parent="."]
-position = Vector2(334, 0)
+position = Vector2(-246, -323)
 script = ExtResource("4_1bvp3")
 attack_track = ExtResource("2_0xm2m")
 placeholder_spawn_scene = ExtResource("5_lquwl")
 
 [node name="Track1" type="Node2D" parent="."]
-position = Vector2(789, 0)
+position = Vector2(209, -323)
 script = ExtResource("4_1bvp3")
 attack_track = ExtResource("1_ig7tw")
 placeholder_spawn_scene = ExtResource("5_lquwl")
+
+[node name="Camera2D" type="Camera2D" parent="."]

@@ -7,7 +7,10 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
-godot = {version = "0.4.5"}
+godot = {version = "0.4.5", features = ["experimental-wasm", "lazy-function-tables"]}
+
+[features]
+nothreads = ["godot/experimental-wasm-nothreads"]
 
 [lints.clippy]
 enum_glob_use = "deny"
