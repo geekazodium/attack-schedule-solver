@@ -1,6 +1,5 @@
-use crate::solver_interface::SolverInterface;
-
 use super::extern_enemy_attack::ExternEnemyAttack;
+use crate::solver_interface::SolverInterface;
 use godot::classes::Resource;
 use godot::classes::class_macros::private::virtuals::Os::Array;
 use godot::obj::Gd;

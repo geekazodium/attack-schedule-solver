@@ -106,7 +106,7 @@ impl ComplementAttackRequest {
                 return;
             }
             while index < self.request_frames.len() {
-                if self.request_frames[index] == active {
+                if self.request_frames[index] + self.request_start_frame == active {
                     self.taken_requests[index] = !undo;
                     break;
                 }

@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-use std::num::NonZeroI64;
-
 use crate::enemy_track::EnemyTrack;
 use crate::enemy_track::complement_attack_request::ComplementAttackRequest;
+use std::collections::HashMap;
+use std::num::NonZeroI64;
 
 #[derive(Debug)]
 pub struct Solver {
@@ -12,7 +11,7 @@ pub struct Solver {
     time_frames: u64,
 }
 
-#[allow(unused)]
+// #[allow(unused)]
 impl Solver {
     pub fn new() -> Self {
         Self {
@@ -38,15 +37,20 @@ impl Solver {
     //returns true if the lead request is cleared or if there was no lead request
     fn try_clear_lead_request(&mut self) -> bool {
         if let Some(req) = &self.lead_request {
-            if (req.claim_end_time() >= self.time_frames) {
+            // godot_print!("current request claim ends at: {}", req.claim_end_time());
+            if req.claim_end_time() >= self.time_frames {
                 return false;
             }
             self.lead_request = None;
+            dbg!("lead request cleared!");
         }
         true
     }
     pub fn tick(&mut self) {
         self.time_frames += 1;
+    }
+    pub fn current_tick(&self) -> u64 {
+        self.time_frames
     }
     pub fn try_create_new_request(&mut self) -> Option<&ComplementAttackRequest> {
         if !self.try_clear_lead_request() {
@@ -59,7 +63,7 @@ impl Solver {
         &mut self,
         random: &mut impl SolverRandomState,
     ) -> Option<&ComplementAttackRequest> {
-        if let Some(mut request) = self.lead_request.take() {
+        if let Some(request) = self.lead_request.take() {
             self.lead_request = Some(self.solve_request(request, random));
             self.lead_request.as_ref()
         } else {

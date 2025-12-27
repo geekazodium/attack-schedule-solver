@@ -6,6 +6,7 @@ use crate::solver_interface::godot_random::GodotRandom;
 use godot::classes::INode;
 use godot::classes::Node;
 use godot::classes::class_macros::private::virtuals::Os::Array;
+use godot::global::godot_print;
 use godot::global::godot_warn;
 use godot::obj::Gd;
 use godot::obj::WithBaseField;
@@ -48,12 +49,16 @@ impl INode for SolverInterface {
         }
     }
     fn physics_process(&mut self, _delta: f64) {
-        self.solver.tick();
         let mut random = GodotRandom {};
+
+        godot_print!("creating req...");
+        self.solver.try_create_new_request();
+        godot_print!("running solver...");
         if self.solver.solve(&mut random).is_some() {
         } else {
             godot_warn!("no attack in lead track, failed to create request");
         }
+        self.solver.tick();
     }
 }
 
@@ -67,18 +72,18 @@ impl SolverInterface {
             .iter_shared()
             .map(|attack| {
                 Attack::new(
-                    attack.bind().get_duration() as u64,
+                    u64::from(attack.bind().get_duration()),
                     attack
                         .bind()
                         .get_frames()
                         .iter_shared()
-                        .map(|v| v as u64)
+                        .map(|v| u64::from(v))
                         .collect(),
                     attack
                         .bind()
                         .get_requests()
                         .iter_shared()
-                        .map(|v| v as u64)
+                        .map(|v| u64::from(v))
                         .collect(),
                 )
             })
@@ -94,6 +99,17 @@ impl SolverInterface {
 
 impl SolverInterface {
     pub fn commit_move_now(&mut self, id: NonZeroI64, index: usize) {
-        self.solver.get_track_mut(id).commit_by_index(index);
+        let time_now = self.solver.current_tick();
+        godot_print!("current time: {}", time_now);
+        if self
+            .solver
+            .get_track_mut(id)
+            .commit_by_index(index, time_now)
+        {
+            self.solver.change_lead(id);
+            godot_print!("sucess committed move");
+        } else {
+            godot_warn!("failed to commit move");
+        }
     }
 }

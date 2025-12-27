@@ -1,10 +1,9 @@
-use std::ops::RangeFrom;
-
 use self::attack_future_instance::AttackFutureInstance;
 use self::complement_attack_request::ComplementAttackRequest;
 use self::enemy_track_attack_wrapper::EnemyTrackAttack;
 use crate::attack::Attack;
 use crate::enemy_track::future_move_commit::FutureMoveCommit;
+use std::ops::RangeFrom;
 
 mod attack_future_instance;
 pub mod complement_attack_request;
@@ -86,13 +85,13 @@ impl EnemyTrack {
             commit
                 .get_attack(self)
                 .get_attack()
-                .to_request(commit.frames_after_now)
+                .to_request(commit.get_start_frame())
         })
     }
     #[must_use]
     pub fn first_actionable_frame(&self) -> u64 {
         match self.last_future_stack_item() {
-            Some(commit) => commit.get_full_duration(self),
+            Some(commit) => commit.get_end_frame(self),
             None => 0,
         }
     }
@@ -119,8 +118,11 @@ impl EnemyTrack {
         request.apply_commit_claim(self, &commit, false);
         self.future_stack.push(commit);
     }
-    pub fn commit_by_index(&mut self, attack_index: usize) -> bool {
-        let commit = FutureMoveCommit::new(attack_index, 0);
+    pub fn commit_by_index(&mut self, attack_index: usize, start_time: u64) -> bool {
+        if self.first_actionable_frame() >= start_time {
+            return false;
+        }
+        let commit = FutureMoveCommit::new(attack_index, start_time);
         self.future_stack.push(commit);
         true
     }
@@ -214,7 +216,7 @@ mod enemy_track_tests {
         let mut mock_request: ComplementAttackRequest = src.to_request(0);
 
         commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
-        commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, false);
+        commit_and_assert(&mut mock_request, &mut mock_track, 0, 1, false);
     }
 
     #[test]
