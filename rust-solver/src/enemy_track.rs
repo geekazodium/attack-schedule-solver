@@ -60,18 +60,18 @@ impl EnemyTrack {
     pub fn get_future_stack(&self) -> &Vec<FutureMoveCommit> {
         &self.future_stack
     }
-    pub fn latest_nonpast_commit(&self) -> Option<&FutureMoveCommit>{
-        self.future_stack.get(0)
+    pub fn latest_nonpast_commit(&self) -> Option<&FutureMoveCommit> {
+        self.future_stack.first()
     }
-    pub fn update_latest_nonpast(&mut self, time: u64){
+    pub fn update_latest_nonpast(&mut self, time: u64) {
         let mut i = 0;
-        while let Some(zeroth) = self.future_stack.get(i){
-            if zeroth.get_end_frame(&self) >= time{
+        while let Some(zeroth) = self.future_stack.get(i) {
+            if zeroth.get_end_frame(self) > time {
                 break;
             }
             i += 1;
         }
-        
+
         self.future_stack.rotate_left(i);
         for _ in 0..i {
             self.future_stack.pop();
@@ -140,7 +140,7 @@ impl EnemyTrack {
         self.future_stack.push(commit);
     }
     pub fn commit_by_index(&mut self, attack_index: usize, start_time: u64) -> bool {
-        if self.first_actionable_frame() >= start_time {
+        if self.first_actionable_frame() > start_time {
             return false;
         }
         let commit = FutureMoveCommit::new(attack_index, start_time);

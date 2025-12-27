@@ -100,8 +100,11 @@ impl SolverInterface {
 }
 
 impl SolverInterface {
+    pub fn time_now(&self) -> u64 {
+        self.solver.current_tick()
+    }
     pub fn commit_move_now(&mut self, id: NonZeroI64, index: usize) {
-        let time_now = self.solver.current_tick();
+        let time_now = self.time_now();
         if self
             .solver
             .get_track_mut(&id)
@@ -113,11 +116,14 @@ impl SolverInterface {
             // godot_warn!("failed to commit move");
         }
     }
-    pub fn get_latest_nonpast_commit(&self, id: NonZeroI64) -> Option<&FutureMoveCommit>{
+    pub fn get_latest_nonpast_commit(&self, id: NonZeroI64) -> Option<&FutureMoveCommit> {
         self.solver.get_track(&id).latest_nonpast_commit()
     }
-    pub fn get_commit_on_this_frame(&self, id: NonZeroI64) -> Option<&FutureMoveCommit>{
-        let time_now = self.solver.current_tick();
-        self.get_latest_nonpast_commit(id).filter(|v|v.get_start_frame() == time_now)
+    pub fn get_commit_on_this_frame(&self, id: NonZeroI64) -> Option<&FutureMoveCommit> {
+        // subtract one because the end of the processing cycle for the solver increments and so checking
+        // when you are outside of that cycle, you will need to effectively undo that.
+        let time_now = self.time_now() - 1;
+        self.get_latest_nonpast_commit(id)
+            .filter(|v| v.get_start_frame() == time_now)
     }
 }

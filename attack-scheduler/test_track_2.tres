@@ -1,8 +1,12 @@
-[gd_resource type="ExternEnemyTrack" load_steps=2 format=3 uid="uid://xd5ssh3iukl2"]
+[gd_resource type="ExternEnemyTrack" load_steps=3 format=3 uid="uid://xd5ssh3iukl2"]
 
 [sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_jh2fn"]
 frames = Array[int]([10])
 duration = 60
 
+[sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_jltck"]
+frames = Array[int]([7, 27])
+duration = 30
+
 [resource]
-attacks = Array[ExternEnemyAttack]([SubResource("ExternEnemyAttack_jh2fn")])
+attacks = Array[ExternEnemyAttack]([SubResource("ExternEnemyAttack_jh2fn"), SubResource("ExternEnemyAttack_jltck")])

@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://daiimno0y6uad"]
+
+[ext_resource type="Texture2D" uid="uid://gpowqnde7afr" path="res://icon.svg" id="1_f1sah"]
+[ext_resource type="Script" uid="uid://dg5r4dc4yg5bi" path="res://falling not a note/falling_thingy.gd" id="1_w5ukd"]
+
+[node name="Placeholder" type="Node2D"]
+script = ExtResource("1_w5ukd")
+fall_speed = 800.0
+
+[node name="Node2D" type="Sprite2D" parent="."]
+scale = Vector2(1.265625, 0.15625)
+texture = ExtResource("1_f1sah")

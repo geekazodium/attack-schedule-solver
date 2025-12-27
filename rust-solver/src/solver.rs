@@ -1,6 +1,5 @@
 use crate::enemy_track::EnemyTrack;
 use crate::enemy_track::complement_attack_request::ComplementAttackRequest;
-use crate::enemy_track::future_move_commit::FutureMoveCommit;
 use std::collections::HashMap;
 use std::num::NonZeroI64;
 
@@ -35,14 +34,14 @@ impl Solver {
     pub fn get_track_mut(&mut self, index: &NonZeroI64) -> &mut EnemyTrack {
         self.tracks.get_mut(index).unwrap()
     }
-    pub fn get_track(&self, index: &NonZeroI64) -> &EnemyTrack{
+    pub fn get_track(&self, index: &NonZeroI64) -> &EnemyTrack {
         self.tracks.get(index).unwrap()
     }
     //returns true if the lead request is cleared or if there was no lead request
     fn try_clear_lead_request(&mut self) -> bool {
         if let Some(req) = &self.lead_request {
             // godot_print!("current request claim ends at: {}", req.claim_end_time());
-            if req.claim_end_time() >= self.time_now_frames {
+            if req.claim_end_time() > self.time_now_frames {
                 return false;
             }
             self.lead_request = None;
@@ -75,9 +74,9 @@ impl Solver {
             None
         }
     }
-    pub fn update_latest_nonpast(&mut self){
+    pub fn update_latest_nonpast(&mut self) {
         let curr_tick = self.current_tick();
-        for (_, value) in &mut self.tracks{
+        for value in self.tracks.values_mut() {
             value.update_latest_nonpast(curr_tick);
         }
     }
