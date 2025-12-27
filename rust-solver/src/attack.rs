@@ -16,21 +16,21 @@ impl Attack {
             active_request_frames: request_frames,
         }
     }
-    fn get_last_active(&self) -> Option<u64> {
-        self.active.last().map(|x| self.duration - x)
-    }
-    #[must_use]
-    pub fn get_end_frame(&self) -> Option<u64> {
-        self.get_last_active()
-    }
+    // fn get_last_active(&self) -> Option<u64> {
+    //     self.active.last().map(|x| self.duration - x)
+    // }
+    // #[must_use]
+    // pub fn get_end_frame(&self) -> Option<u64> {
+    //     self.get_last_active()
+    // }
     #[must_use]
     pub fn get_full_duration(&self) -> u64 {
         self.duration
     }
-    #[must_use]
-    pub fn get_cooldown(&self) -> u64 {
-        self.get_last_active().unwrap_or(self.duration)
-    }
+    // #[must_use]
+    // pub fn get_cooldown(&self) -> u64 {
+    //     self.get_last_active().unwrap_or(self.duration)
+    // }
     #[must_use]
     pub fn get_start_frame(&self, request_frame: u64, first_actionable: u64) -> Option<u64> {
         self.active
@@ -58,11 +58,11 @@ impl Attack {
 mod attack_tests {
     use super::*;
 
-    #[test]
-    fn cooldown_valid() {
-        let a = Attack::new(10, vec![8], vec![4]);
-        assert_eq!(a.get_cooldown(), 2);
-    }
+    // #[test]
+    // fn cooldown_valid() {
+    //     let a = Attack::new(10, vec![8], vec![4]);
+    //     assert_eq!(a.get_cooldown(), 2);
+    // }
 
     #[test]
     fn start_frame_valid() {

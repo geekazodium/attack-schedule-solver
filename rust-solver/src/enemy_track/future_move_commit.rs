@@ -38,4 +38,7 @@ impl FutureMoveCommit {
     pub fn get_end_frame(&self, parent_track: &EnemyTrack) -> u64 {
         self.get_full_duration(parent_track) + self.get_start_frame()
     }
+    pub fn get_index(&self) -> usize{
+        self.move_index
+    }
 }

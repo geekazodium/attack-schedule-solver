@@ -104,9 +104,9 @@ mod tests {
         }
 
         for now in 0..120 {
-            solver.get_track_mut(lead_key).commit_by_index(2, now);
+            solver.get_track_mut(&lead_key).commit_by_index(2, now);
             solver.try_create_new_request();
-            let request = solver.solve(&mut random);
+            let _ = solver.solve(&mut random);
             solver.tick();
             // dbg!(request.unwrap().claim_end_time());
         }

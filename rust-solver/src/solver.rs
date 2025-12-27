@@ -1,5 +1,6 @@
 use crate::enemy_track::EnemyTrack;
 use crate::enemy_track::complement_attack_request::ComplementAttackRequest;
+use crate::enemy_track::future_move_commit::FutureMoveCommit;
 use std::collections::HashMap;
 use std::num::NonZeroI64;
 
@@ -8,7 +9,7 @@ pub struct Solver {
     lead_track_id: Option<NonZeroI64>,
     tracks: HashMap<NonZeroI64, EnemyTrack>,
     lead_request: Option<ComplementAttackRequest>,
-    time_frames: u64,
+    time_now_frames: u64,
 }
 
 // #[allow(unused)]
@@ -18,7 +19,7 @@ impl Solver {
             lead_track_id: None,
             tracks: HashMap::new(),
             lead_request: None,
-            time_frames: 0,
+            time_now_frames: 0,
         }
     }
     //swaps in the track at index with lead track, then returns the new index of the track that was swapped
@@ -31,14 +32,17 @@ impl Solver {
     pub fn remove_track(&mut self, index: NonZeroI64) {
         self.tracks.remove(&index);
     }
-    pub fn get_track_mut(&mut self, index: NonZeroI64) -> &mut EnemyTrack {
-        self.tracks.get_mut(&index).unwrap()
+    pub fn get_track_mut(&mut self, index: &NonZeroI64) -> &mut EnemyTrack {
+        self.tracks.get_mut(index).unwrap()
+    }
+    pub fn get_track(&self, index: &NonZeroI64) -> &EnemyTrack{
+        self.tracks.get(index).unwrap()
     }
     //returns true if the lead request is cleared or if there was no lead request
     fn try_clear_lead_request(&mut self) -> bool {
         if let Some(req) = &self.lead_request {
             // godot_print!("current request claim ends at: {}", req.claim_end_time());
-            if req.claim_end_time() >= self.time_frames {
+            if req.claim_end_time() >= self.time_now_frames {
                 return false;
             }
             self.lead_request = None;
@@ -47,10 +51,10 @@ impl Solver {
         true
     }
     pub fn tick(&mut self) {
-        self.time_frames += 1;
+        self.time_now_frames += 1;
     }
     pub fn current_tick(&self) -> u64 {
-        self.time_frames
+        self.time_now_frames
     }
     pub fn try_create_new_request(&mut self) -> Option<&ComplementAttackRequest> {
         if !self.try_clear_lead_request() {
@@ -71,6 +75,25 @@ impl Solver {
             None
         }
     }
+    pub fn update_latest_nonpast(&mut self){
+        let curr_tick = self.current_tick();
+        for (_, value) in &mut self.tracks{
+            value.update_latest_nonpast(curr_tick);
+        }
+    }
+    //returns track id as well as corresponding commit
+    // pub fn get_now_commits(&self) -> Vec<(&NonZeroI64, &FutureMoveCommit)> {
+    //     self.tracks
+    //         .iter()
+    //         .filter_map(|(id, track)| {
+    //             track
+    //                 .get_future_stack()
+    //                 .iter()
+    //                 .find(|item| item.get_start_frame() == self.time_now_frames)
+    //                 .map(|v| (id, v))
+    //         })
+    //         .collect()
+    // }
     fn get_lead_track(&mut self) -> Option<&mut EnemyTrack> {
         self.lead_track_id
             .as_ref()
@@ -85,6 +108,7 @@ impl Solver {
             let mut possible_commits = self
                 .tracks
                 .iter()
+                .filter(|(index, _)| self.lead_track_id.is_none_or(|i| !index.eq(&&i)))
                 .map(|(index, track)| (index, track.possible_future_commits(&mut request)))
                 .filter(|(_, b)| !b.is_empty())
                 .collect::<Vec<_>>();

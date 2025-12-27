@@ -52,9 +52,30 @@ impl EnemyTrack {
             .filter(|future_instance| future_instance.can_meet_request_followup(request))
             .map(AttackFutureInstance::unwrap)
     }
+    #[allow(unused)]
     #[must_use]
     pub fn possible_now_moves(&self, request: &ComplementAttackRequest) -> Vec<&EnemyTrackAttack> {
         self.possible_now_moves_iter(request).collect()
+    }
+    pub fn get_future_stack(&self) -> &Vec<FutureMoveCommit> {
+        &self.future_stack
+    }
+    pub fn latest_nonpast_commit(&self) -> Option<&FutureMoveCommit>{
+        self.future_stack.get(0)
+    }
+    pub fn update_latest_nonpast(&mut self, time: u64){
+        let mut i = 0;
+        while let Some(zeroth) = self.future_stack.get(i){
+            if zeroth.get_end_frame(&self) >= time{
+                break;
+            }
+            i += 1;
+        }
+        
+        self.future_stack.rotate_left(i);
+        for _ in 0..i {
+            self.future_stack.pop();
+        }
     }
     #[must_use]
     pub fn possible_now_commits(&self, request: &ComplementAttackRequest) -> Vec<FutureMoveCommit> {
@@ -126,6 +147,7 @@ impl EnemyTrack {
         self.future_stack.push(commit);
         true
     }
+    #[allow(unused)]
     //uncommit move
     pub fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
         if let Some(commit) = self.future_stack.pop() {

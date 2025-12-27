@@ -1,5 +1,6 @@
 use crate::attack::Attack;
 use crate::enemy_track::EnemyTrack;
+use crate::enemy_track::future_move_commit::FutureMoveCommit;
 use crate::solver::Solver;
 use crate::solver_interface::extern_enemy_track::ExternEnemyTrack;
 use crate::solver_interface::godot_random::GodotRandom;
@@ -51,13 +52,14 @@ impl INode for SolverInterface {
     fn physics_process(&mut self, _delta: f64) {
         let mut random = GodotRandom {};
 
-        godot_print!("creating req...");
+        // godot_print!("creating req...");
         self.solver.try_create_new_request();
-        godot_print!("running solver...");
+        // godot_print!("running solver...");
         if self.solver.solve(&mut random).is_some() {
         } else {
             godot_warn!("no attack in lead track, failed to create request");
         }
+        self.solver.update_latest_nonpast();
         self.solver.tick();
     }
 }
@@ -77,13 +79,13 @@ impl SolverInterface {
                         .bind()
                         .get_frames()
                         .iter_shared()
-                        .map(|v| u64::from(v))
+                        .map(u64::from)
                         .collect(),
                     attack
                         .bind()
                         .get_requests()
                         .iter_shared()
-                        .map(|v| u64::from(v))
+                        .map(u64::from)
                         .collect(),
                 )
             })
@@ -100,16 +102,22 @@ impl SolverInterface {
 impl SolverInterface {
     pub fn commit_move_now(&mut self, id: NonZeroI64, index: usize) {
         let time_now = self.solver.current_tick();
-        godot_print!("current time: {}", time_now);
         if self
             .solver
-            .get_track_mut(id)
+            .get_track_mut(&id)
             .commit_by_index(index, time_now)
         {
             self.solver.change_lead(id);
             godot_print!("sucess committed move");
         } else {
-            godot_warn!("failed to commit move");
+            // godot_warn!("failed to commit move");
         }
+    }
+    pub fn get_latest_nonpast_commit(&self, id: NonZeroI64) -> Option<&FutureMoveCommit>{
+        self.solver.get_track(&id).latest_nonpast_commit()
+    }
+    pub fn get_commit_on_this_frame(&self, id: NonZeroI64) -> Option<&FutureMoveCommit>{
+        let time_now = self.solver.current_tick();
+        self.get_latest_nonpast_commit(id).filter(|v|v.get_start_frame() == time_now)
     }
 }
