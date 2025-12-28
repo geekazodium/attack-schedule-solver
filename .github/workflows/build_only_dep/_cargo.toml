@@ -6,8 +6,10 @@ edition = "2024"
 [lib]
 crate-type = ["cdylib"]
 
-[dependencies]
-godot = {version = "0.4.5"}
+[dependencies.godot]
+git = "https://github.com/godot-rust/gdext"
+branch = "master"
+features = ["api-custom", "experimental-wasm", "lazy-function-tables"]
 
 [features]
 nothreads = ["godot/experimental-wasm-nothreads"]
@@ -15,3 +17,4 @@ nothreads = ["godot/experimental-wasm-nothreads"]
 [lints.clippy]
 enum_glob_use = "deny"
 pedantic = "deny"
+

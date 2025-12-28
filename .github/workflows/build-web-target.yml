@@ -33,7 +33,7 @@ permissions:
 env:
   GODOT_VERSION: 4.5
   EXPORT_NAME: web-prototype-2
-  PROJECT_PATH: ./
+  PROJECT_PATH: attack-scheduler/
   RUST_DIR: rust-solver
   CARGO_PROJECT_NAME: attack_scheduler
 
@@ -43,20 +43,34 @@ jobs:
     env:
       BUILD_PATH: target/wasm32-unknown-emscripten/release/
     steps:
-    #code taken from https://github.com/deltasiege/godot-rapier-3d/blob/9c26657e074d2b09ec3e2323ceac3c2ddf8603a4/.github/workflows/jobs-build.yml
     - uses: actions/checkout@v4
-    - uses: mymindstorm/setup-emsdk@v14
+    - name: Setup Godot
+      uses: appsinacup/setup-godot-action@main
+      with:
+        version: '4.5-stable'
+    
+    - name: Set Godot4 BIN
+      run: | 
+        echo "GODOT4_BIN=$GODOT4" >> $GITHUB_ENV
+    
+    - name: Set up Emscripten latest
+      uses: mymindstorm/setup-emsdk@v14
       with:
         version: 3.1.74
-        actions-cache-folder: "emsdk-cache"
+        cache-key: emsdk-cache
 
-    - name: Verify Emscripten
-      run: emcc -v
+    - name: Verify Emscripten setup
+      run: |
+        emcc -v
 
-    - name: Install Nightly
-      uses: dtolnay/rust-toolchain@nightly
-      with:
-        targets: wasm32-unknown-emscripten
+    - name: Install gcc-multilib for cross-compilation
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib llvm-dev libclang-dev clang
+
+    - name: Replace Cargo Config File
+      run: |
+        cat .github/workflows/build_only_dep/_cargo.toml > ${{env.RUST_DIR}}/Cargo.toml
 
     - name: Install Nightly
       run: |
@@ -74,13 +88,11 @@ jobs:
           ${{env.RUST_DIR}}/${{env.BUILD_PATH}}.fingerprint
           ${{env.RUST_DIR}}/${{env.BUILD_PATH}}build
           ${{env.RUST_DIR}}/${{env.BUILD_PATH}}deps
-        key: ${{ runner.os }}-build-rust-release-linux
+        key: ${{ runner.os }}-build-rust-release-wasm32
 
     - name: build rust
       run: cargo +nightly build --features nothreads -Zbuild-std --target wasm32-unknown-emscripten --release
       working-directory: ${{env.RUST_DIR}}
-      env: 
-        RUSTFLAGS: -C link-args=-sSIDE_MODULE=2 -C target-feature=+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0
     # borrowed code end
     - name: upload ${{env.EXPORT_NAME}}
       uses: actions/upload-artifact@v4
@@ -96,7 +108,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: caches rust directory
-      id: cache-rust-deps-release
+      id: cache-rust-deps-release-linux-only
       uses: actions/cache@v4
       env: 
         cache-name: "rust dependencies"
@@ -121,7 +133,7 @@ jobs:
     needs: [build-rust-wasm32, build-rust-linux]
     runs-on: ubuntu-22.04  # Use 22.04 with godot 4
     container:
-      image: barichello/godot-ci:4.4.1
+      image: barichello/godot-ci:4.5
     steps:
       - name: Checkout
         uses: actions/checkout@v4

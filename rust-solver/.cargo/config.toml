@@ -1,8 +1,10 @@
 [target.wasm32-unknown-emscripten]
 rustflags = [
-    "-C", "link-args=-pthread", # /!\ Read 'Thread support' below regarding this flag
-    "-C", "target-feature=+atomics", # /!\ Read 'Thread support' below regarding this flag
-    "-C", "link-args=-sSIDE_MODULE=2",
-    "-Zlink-native-libraries=no",
-    "-Cllvm-args=-enable-emscripten-cxx-exceptions=0",
+  "-C", "link-args=-sSIDE_MODULE=2",
+  "-C", "target-feature=+bulk-memory,+mutable-globals",
+  "-C", "link-arg=-fwasm-exceptions",
+  "-C", "llvm-args=-enable-emscripten-cxx-exceptions=0",
+  "-Z", "link-native-libraries=no",
+  "-Zunstable-options",
+  "-C", "panic=immediate-abort"
 ]
