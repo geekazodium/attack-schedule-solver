@@ -2,7 +2,6 @@ use godot::init::ExtensionLibrary;
 use godot::init::gdextension;
 
 pub(crate) mod attack;
-mod default_hasher_random;
 pub(crate) mod enemy_track;
 mod solver;
 pub mod solver_interface;
@@ -15,14 +14,16 @@ unsafe impl ExtensionLibrary for AttackSchedulerExtension {}
 #[cfg(test)]
 mod tests {
     use crate::attack::Attack;
-    use crate::default_hasher_random::HashRandom;
     use crate::enemy_track::EnemyTrack;
     use crate::solver::Solver;
     use crate::solver::SolverRandomState;
+    use crate::tests::default_hasher_random::HashRandom;
     use std::i64;
     use std::num::NonZeroI64;
     use std::time::Duration;
     use std::time::Instant;
+
+    mod default_hasher_random;
 
     #[test]
     fn test_hasher_works() {
@@ -104,7 +105,7 @@ mod tests {
         }
 
         for now in 0..120 {
-            solver.get_track_mut(&lead_key).commit_by_index(2, now);
+            solver.get_track_mut(lead_key).commit_by_index(2, now);
             solver.try_create_new_request();
             let _ = solver.solve(&mut random);
             solver.tick();

@@ -9,7 +9,6 @@ pub struct HashRandom {
 }
 
 impl HashRandom {
-    #[allow(unused)]
     pub fn new(seed: u64) -> Self {
         Self {
             seed,

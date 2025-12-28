@@ -11,7 +11,6 @@ pub struct Solver {
     time_now_frames: u64,
 }
 
-// #[allow(unused)]
 impl Solver {
     pub fn new() -> Self {
         Self {
@@ -35,11 +34,11 @@ impl Solver {
             self.lead_track_id = None;
         }
     }
-    pub fn get_track_mut(&mut self, index: &NonZeroI64) -> &mut EnemyTrack {
-        self.tracks.get_mut(index).unwrap()
+    pub fn get_track_mut(&mut self, index: NonZeroI64) -> &mut EnemyTrack {
+        self.tracks.get_mut(&index).unwrap()
     }
-    pub fn get_track(&self, index: &NonZeroI64) -> &EnemyTrack {
-        self.tracks.get(index).unwrap()
+    pub fn get_track(&self, index: NonZeroI64) -> &EnemyTrack {
+        self.tracks.get(&index).unwrap()
     }
     pub fn all_tracks_actionable(&self, start_time: u64) -> bool {
         !self

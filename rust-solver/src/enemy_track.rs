@@ -18,7 +18,6 @@ pub struct EnemyTrack {
 }
 
 impl EnemyTrack {
-    #[allow(unused)]
     #[must_use]
     pub fn new(attacks: Vec<Attack>) -> Self {
         let attacks: Vec<EnemyTrackAttack> = attacks
@@ -51,19 +50,6 @@ impl EnemyTrack {
             })
             .filter(|future_instance| future_instance.can_meet_request_followup(request))
             .map(AttackFutureInstance::unwrap)
-    }
-    #[allow(unused)]
-    #[must_use]
-    pub fn possible_now_moves(&self, request: &ComplementAttackRequest) -> Vec<&EnemyTrackAttack> {
-        if let Some(request_frame) = request.first_req_frame() {
-            self.possible_now_moves_iter(request, request_frame)
-                .collect()
-        } else {
-            vec![]
-        }
-    }
-    pub fn get_future_stack(&self) -> &Vec<FutureMoveCommit> {
-        &self.future_stack
     }
     pub fn latest_nonpast_commit(&self) -> Option<&FutureMoveCommit> {
         self.future_stack.first()
@@ -159,21 +145,35 @@ impl EnemyTrack {
     pub fn is_actionable_now(&self, start_time: u64) -> bool {
         self.first_actionable_frame() <= start_time
     }
-    #[allow(unused)]
-    //uncommit move
-    pub fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
-        if let Some(commit) = self.future_stack.pop() {
-            request.apply_commit_claim(self, &commit, true);
-
-            return true;
-        }
-        false
-    }
 }
 
 #[cfg(test)]
 mod enemy_track_tests {
     use super::*;
+
+    impl EnemyTrack {
+        #[must_use]
+        pub fn possible_now_moves(
+            &self,
+            request: &ComplementAttackRequest,
+        ) -> Vec<&EnemyTrackAttack> {
+            if let Some(request_frame) = request.first_req_frame() {
+                self.possible_now_moves_iter(request, request_frame)
+                    .collect()
+            } else {
+                vec![]
+            }
+        }
+        //uncommit move
+        pub fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
+            if let Some(commit) = self.future_stack.pop() {
+                request.apply_commit_claim(self, &commit, true);
+
+                return true;
+            }
+            false
+        }
+    }
 
     fn commit_and_assert(
         request: &mut ComplementAttackRequest,

@@ -85,7 +85,7 @@ impl SolverInterface {
         }
         if self
             .solver
-            .get_track_mut(&id)
+            .get_track_mut(id)
             .commit_by_index(index, time_now)
         {
             self.solver.change_lead(id);
@@ -95,7 +95,7 @@ impl SolverInterface {
         }
     }
     pub fn get_latest_nonpast_commit(&self, id: NonZeroI64) -> Option<&FutureMoveCommit> {
-        self.solver.get_track(&id).latest_nonpast_commit()
+        self.solver.get_track(id).latest_nonpast_commit()
     }
     pub fn get_commit_on_this_frame(&self, id: NonZeroI64) -> Option<&FutureMoveCommit> {
         // subtract one because the end of the processing cycle for the solver increments and so checking

@@ -53,15 +53,18 @@ impl ExternEnemyTrack {
 impl ExternEnemyTrack {
     #[func]
     fn commit_move_now(&mut self, index: i64) {
-        self.get_solver_parent()
-            .bind_mut()
-            .commit_move_now(self.get_id(), index as usize);
+        self.get_solver_parent().bind_mut().commit_move_now(
+            self.get_id(),
+            usize::try_from(index).expect("index of move out of usize range"),
+        );
     }
     #[func]
     fn attack_index_on_this_frame(&mut self) -> i64 {
         self.get_solver_parent()
             .bind()
             .get_commit_on_this_frame(self.get_id())
-            .map_or(-1, |v| v.get_index() as i64)
+            .map_or(-1, |v| {
+                i64::try_from(v.get_index()).expect("usize out of i64 range")
+            })
     }
 }
