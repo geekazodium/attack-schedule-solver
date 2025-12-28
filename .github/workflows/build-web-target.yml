@@ -53,11 +53,21 @@ jobs:
       run: | 
         echo "GODOT4_BIN=$GODOT4" >> $GITHUB_ENV
     
+    - name: Cache EMSDK
+      id: cache-emsdk
+      uses: actions/cache@v4
+      env: 
+        cache-name: "emsdk"
+      with:
+        path: |
+          'emsdk-cache'
+        key: ${{ runner.os }}-emsdk
+
     - name: Set up Emscripten latest
       uses: mymindstorm/setup-emsdk@v14
       with:
         version: 3.1.74
-        cache-key: emsdk-cache
+        actions-cache-folder: 'emsdk-cache'
 
     - name: Verify Emscripten setup
       run: |
@@ -85,9 +95,7 @@ jobs:
         cache-name: "rust dependencies"
       with:
         path: |
-          ${{env.RUST_DIR}}/${{env.BUILD_PATH}}.fingerprint
-          ${{env.RUST_DIR}}/${{env.BUILD_PATH}}build
-          ${{env.RUST_DIR}}/${{env.BUILD_PATH}}deps
+          ${{env.RUST_DIR}}/target/
         key: ${{ runner.os }}-build-rust-release-wasm32
 
     - name: build rust
