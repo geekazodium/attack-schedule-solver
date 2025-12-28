@@ -30,12 +30,22 @@ impl Solver {
     }
     pub fn remove_track(&mut self, index: NonZeroI64) {
         self.tracks.remove(&index);
+        if self.lead_track_id == Some(index) {
+            self.lead_request = None;
+            self.lead_track_id = None;
+        }
     }
     pub fn get_track_mut(&mut self, index: &NonZeroI64) -> &mut EnemyTrack {
         self.tracks.get_mut(index).unwrap()
     }
     pub fn get_track(&self, index: &NonZeroI64) -> &EnemyTrack {
         self.tracks.get(index).unwrap()
+    }
+    pub fn all_tracks_actionable(&self, start_time: u64) -> bool {
+        !self
+            .tracks
+            .iter()
+            .any(|(_, value)| !value.is_actionable_now(start_time))
     }
     //returns true if the lead request is cleared or if there was no lead request
     fn try_clear_lead_request(&mut self) -> bool {
@@ -80,19 +90,6 @@ impl Solver {
             value.update_latest_nonpast(curr_tick);
         }
     }
-    //returns track id as well as corresponding commit
-    // pub fn get_now_commits(&self) -> Vec<(&NonZeroI64, &FutureMoveCommit)> {
-    //     self.tracks
-    //         .iter()
-    //         .filter_map(|(id, track)| {
-    //             track
-    //                 .get_future_stack()
-    //                 .iter()
-    //                 .find(|item| item.get_start_frame() == self.time_now_frames)
-    //                 .map(|v| (id, v))
-    //         })
-    //         .collect()
-    // }
     fn get_lead_track(&mut self) -> Option<&mut EnemyTrack> {
         self.lead_track_id
             .as_ref()

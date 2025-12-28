@@ -1,6 +1,6 @@
-extends Node2D
+extends Node
 
-@export var attack_track: ExternEnemyTrack;
+@export var track: MovesTrack;
 
 func _physics_process(_delta: float) -> void:
-	attack_track.commit_move_now(0);
+	track.attack_track.commit_move_now(0);

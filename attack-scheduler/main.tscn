@@ -1,21 +1,29 @@
-[gd_scene load_steps=6 format=3 uid="uid://dbmqb5jaq1ajk"]
+[gd_scene load_steps=12 format=3 uid="uid://dbmqb5jaq1ajk"]
 
-[ext_resource type="ExternEnemyTrack" uid="uid://boplywh12t4ks" path="res://test_track_1.tres" id="1_ig7tw"]
-[ext_resource type="ExternEnemyTrack" uid="uid://xd5ssh3iukl2" path="res://test_track_2.tres" id="2_0xm2m"]
+[ext_resource type="ExternEnemyTrack" uid="uid://boplywh12t4ks" path="res://moves/test_track_1.tres" id="1_ig7tw"]
+[ext_resource type="ExternEnemyTrack" uid="uid://xd5ssh3iukl2" path="res://moves/test_track_2.tres" id="2_0xm2m"]
 [ext_resource type="Script" uid="uid://bkayqf0m0xyhk" path="res://test_script.gd" id="3_h2yge"]
 [ext_resource type="Script" uid="uid://dit44mmvxk3sj" path="res://show_moves.gd" id="4_1bvp3"]
 [ext_resource type="PackedScene" uid="uid://daiimno0y6uad" path="res://falling not a note/placeholder.tscn" id="5_lquwl"]
+[ext_resource type="Script" uid="uid://chlqo7nytk6lx" path="res://deflection.gd" id="6_7mycd"]
+[ext_resource type="Script" uid="uid://bernm1mp5eohb" path="res://hit_shapecast.gd" id="7_5vw27"]
+[ext_resource type="Script" uid="uid://rje2exq5ixdp" path="res://damage.gd" id="7_272bh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_272bh"]
+size = Vector2(1000, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5vw27"]
+size = Vector2(1000, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7mycd"]
+size = Vector2(1194, 74)
 
 [node name="Main" type="Node2D"]
 
-[node name="SolverInterface" type="SolverInterface" parent="."]
-tracks = Array[ExternEnemyTrack]([ExtResource("1_ig7tw"), ExtResource("2_0xm2m")])
-process_physics_priority = -5
-
-[node name="Node2D" type="Node2D" parent="."]
+[node name="initiator" type="Node" parent="." node_paths=PackedStringArray("track")]
 process_physics_priority = 1
 script = ExtResource("3_h2yge")
-attack_track = ExtResource("1_ig7tw")
+track = NodePath("../Track1")
 
 [node name="Track2" type="Node2D" parent="."]
 position = Vector2(-246, -323)
@@ -29,4 +37,81 @@ script = ExtResource("4_1bvp3")
 attack_track = ExtResource("1_ig7tw")
 placeholder_spawn_scene = ExtResource("5_lquwl")
 
+[node name="Track3" type="Node2D" parent="."]
+position = Vector2(-4, -323)
+script = ExtResource("4_1bvp3")
+attack_track = ExtResource("1_ig7tw")
+placeholder_spawn_scene = ExtResource("5_lquwl")
+
 [node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="Deflection" type="Node2D" parent="." node_paths=PackedStringArray("buttons", "active_timer", "cooldown_timer")]
+position = Vector2(0, 206)
+script = ExtResource("6_7mycd")
+buttons = {
+&"left": NodePath("Left"),
+&"right": NodePath("Right")
+}
+active_timer = NodePath("ActiveTimer")
+cooldown_timer = NodePath("CooldownTimer")
+
+[node name="ActiveTimer" type="Timer" parent="Deflection"]
+process_callback = 0
+wait_time = 0.3
+one_shot = true
+
+[node name="CooldownTimer" type="Timer" parent="Deflection"]
+process_callback = 0
+wait_time = 0.5
+one_shot = true
+
+[node name="Line2D" type="Line2D" parent="Deflection"]
+points = PackedVector2Array(487, 0, -474, 0)
+
+[node name="Left" type="ShapeCast2D" parent="Deflection"]
+visible = false
+enabled = false
+shape = SubResource("RectangleShape2D_272bh")
+max_results = 1
+collide_with_areas = true
+script = ExtResource("7_5vw27")
+
+[node name="LeftIndicator" type="Line2D" parent="Deflection/Left"]
+points = PackedVector2Array(487, 0, -474, 0)
+default_color = Color(1, 0, 0, 1)
+
+[node name="Right" type="ShapeCast2D" parent="Deflection"]
+visible = false
+enabled = false
+shape = SubResource("RectangleShape2D_5vw27")
+max_results = 1
+collision_mask = 2
+collide_with_areas = true
+script = ExtResource("7_5vw27")
+
+[node name="RightIndicator" type="Line2D" parent="Deflection/Right"]
+points = PackedVector2Array(487, 0, -474, 0)
+default_color = Color(0, 0, 1, 1)
+
+[node name="Damage" type="Area2D" parent="."]
+position = Vector2(0, 296)
+collision_layer = 0
+collision_mask = 3
+script = ExtResource("7_272bh")
+max_health = 5
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Damage"]
+shape = SubResource("RectangleShape2D_7mycd")
+
+[node name="ProgressBar" type="ProgressBar" parent="Damage"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -548.0
+offset_top = -13.5
+offset_right = 548.0
+offset_bottom = 13.5
+grow_horizontal = 2
+grow_vertical = 2

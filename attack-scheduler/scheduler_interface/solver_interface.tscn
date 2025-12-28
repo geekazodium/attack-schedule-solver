@@ -1,0 +1,4 @@
+[gd_scene format=3 uid="uid://csugyj2ca7juh"]
+
+[node name="SolverInterface" type="SolverInterface"]
+process_physics_priority = -5

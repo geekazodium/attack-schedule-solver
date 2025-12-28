@@ -1,19 +1,36 @@
 extends Node2D
+class_name MovesTrack;
+
+const parry_dir_color: Array[Color] = [Color.RED, Color.BLUE];
+const parry_collision_layer: Array[int] = [0b01, 0b10];
 
 @export var attack_track: ExternEnemyTrack;
 
 @export var placeholder_spawn_scene: PackedScene;
 
-var current_move: ExternEnemyAttack;
+var current_move: ParryableEnemyAttack;
 var current_move_frame: int = 0;
 
 signal active_frame_start();
 
-func instantiate_test_with_color(color: Color) -> void:
+func _enter_tree() -> void:
+	self.attack_track = self.attack_track.duplicate(false);
+	GlobalSolverInterface.add_track(self.attack_track);
+
+func _exit_tree() -> void:
+	GlobalSolverInterface.remove_track(self.attack_track);
+
+func instantiate_with_color(color: Color) -> Node2D:
 	var scene = self.placeholder_spawn_scene.instantiate();
 	if scene is Node2D:
 		scene.modulate = color;
 	self.add_child(scene);
+	return scene;
+
+func instantiate_parry(parry_dir: int) -> Area2D:
+	var scene: Area2D = self.instantiate_with_color(self.parry_dir_color[parry_dir]);
+	scene.collision_layer = self.parry_collision_layer[parry_dir];
+	return scene;
 
 func _physics_process(_delta: float) -> void:
 	var updated: bool = self.try_update_current_move();
@@ -47,5 +64,5 @@ func update_current_move() -> void:
 	if self.current_move.frames[index] != self.current_move_frame:
 		return;
 	self.active_frame_start.emit();
-	var scene = self.placeholder_spawn_scene.instantiate();
-	self.add_child(scene);
+	var parry_dir: int = self.current_move.parry_directions[index];
+	self.instantiate_parry(parry_dir);

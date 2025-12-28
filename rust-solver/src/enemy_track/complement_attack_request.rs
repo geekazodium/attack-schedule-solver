@@ -46,11 +46,13 @@ impl ComplementAttackRequest {
             request_start_frame: start_frame,
         }
     }
-    pub(crate) fn first_req_frame(&self) -> u64 {
+    pub(crate) fn first_req_frame(&self) -> Option<u64> {
+        if self.taken_requests[self.request_offset] {
+            return None;
+        }
         self.request_frames
             .get(self.request_offset)
             .map(|frame| frame + self.request_start_frame)
-            .expect("impossible instance of request was created")
     }
     pub(crate) fn iter_skip_start(&'_ self) -> impl Iterator<Item = u64> {
         self.request_frames
@@ -186,10 +188,10 @@ mod complement_attack_request_tests {
 
         assert_eq!(req.iter_skip_start().collect::<Vec<u64>>(), vec![52, 110]);
 
-        assert_eq!(req.first_req_frame(), 40);
+        assert_eq!(req.first_req_frame(), Some(40));
 
         req.skip();
 
-        assert_eq!(req.first_req_frame(), 52);
+        assert_eq!(req.first_req_frame(), Some(52));
     }
 }

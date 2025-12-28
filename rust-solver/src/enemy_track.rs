@@ -36,8 +36,8 @@ impl EnemyTrack {
     pub fn possible_now_moves_iter(
         &self,
         request: &ComplementAttackRequest,
+        request_frame: u64,
     ) -> impl Iterator<Item = &EnemyTrackAttack> {
-        let request_frame = request.first_req_frame();
         self.attacks
             .iter()
             .zip(&self.attacks_validitiy)
@@ -55,7 +55,12 @@ impl EnemyTrack {
     #[allow(unused)]
     #[must_use]
     pub fn possible_now_moves(&self, request: &ComplementAttackRequest) -> Vec<&EnemyTrackAttack> {
-        self.possible_now_moves_iter(request).collect()
+        if let Some(request_frame) = request.first_req_frame() {
+            self.possible_now_moves_iter(request, request_frame)
+                .collect()
+        } else {
+            vec![]
+        }
     }
     pub fn get_future_stack(&self) -> &Vec<FutureMoveCommit> {
         &self.future_stack
@@ -79,9 +84,13 @@ impl EnemyTrack {
     }
     #[must_use]
     pub fn possible_now_commits(&self, request: &ComplementAttackRequest) -> Vec<FutureMoveCommit> {
-        self.possible_now_moves_iter(request)
-            .filter_map(|attack| self.create_future_move(request.first_req_frame(), attack))
-            .collect()
+        if let Some(request_frame) = request.first_req_frame() {
+            self.possible_now_moves_iter(request, request_frame)
+                .filter_map(|attack| self.create_future_move(request_frame, attack))
+                .collect()
+        } else {
+            vec![]
+        }
     }
     //FIXME: bad mutability practice, request should never be changed here, so it should be immutable
     //however, need to move it forwards and then revert to avoid issues.
@@ -140,12 +149,15 @@ impl EnemyTrack {
         self.future_stack.push(commit);
     }
     pub fn commit_by_index(&mut self, attack_index: usize, start_time: u64) -> bool {
-        if self.first_actionable_frame() > start_time {
+        if !self.is_actionable_now(start_time) {
             return false;
         }
         let commit = FutureMoveCommit::new(attack_index, start_time);
         self.future_stack.push(commit);
         true
+    }
+    pub fn is_actionable_now(&self, start_time: u64) -> bool {
+        self.first_actionable_frame() <= start_time
     }
     #[allow(unused)]
     //uncommit move

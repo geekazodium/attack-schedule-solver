@@ -5,7 +5,7 @@ pub(crate) mod attack;
 mod default_hasher_random;
 pub(crate) mod enemy_track;
 mod solver;
-mod solver_interface;
+pub mod solver_interface;
 
 struct AttackSchedulerExtension;
 

@@ -6,7 +6,6 @@ use crate::solver_interface::extern_enemy_track::ExternEnemyTrack;
 use crate::solver_interface::godot_random::GodotRandom;
 use godot::classes::INode;
 use godot::classes::Node;
-use godot::classes::class_macros::private::virtuals::Os::Array;
 use godot::global::godot_print;
 use godot::global::godot_warn;
 use godot::obj::Gd;
@@ -24,8 +23,6 @@ mod godot_random;
 #[class(base=Node)]
 struct SolverInterface {
     base: Base<Node>,
-    #[export]
-    tracks: Array<Gd<ExternEnemyTrack>>,
     solver: Solver,
 }
 
@@ -34,19 +31,7 @@ impl INode for SolverInterface {
     fn init(base: Base<Node>) -> Self {
         Self {
             base,
-            tracks: Array::new(),
             solver: Solver::new(),
-        }
-    }
-    fn ready(&mut self) {
-        for mut t in self.tracks.clone().iter_shared() {
-            t.bind_mut().parent_to_solver(self.to_gd());
-            self.add_track(t);
-        }
-
-        if !self.tracks.is_empty() {
-            self.solver
-                .change_lead(self.tracks.get(0).unwrap().bind_mut().get_id());
         }
     }
     fn physics_process(&mut self, _delta: f64) {
@@ -67,35 +52,25 @@ impl INode for SolverInterface {
 #[godot_api]
 impl SolverInterface {
     #[func]
-    fn add_track(&mut self, extern_track: Gd<ExternEnemyTrack>) {
+    fn add_track(&mut self, mut extern_track: Gd<ExternEnemyTrack>) {
+        extern_track.bind_mut().parent_to_solver(self.to_gd());
         let attacks = extern_track
             .bind()
             .get_attacks()
             .iter_shared()
-            .map(|attack| {
-                Attack::new(
-                    u64::from(attack.bind().get_duration()),
-                    attack
-                        .bind()
-                        .get_frames()
-                        .iter_shared()
-                        .map(u64::from)
-                        .collect(),
-                    attack
-                        .bind()
-                        .get_requests()
-                        .iter_shared()
-                        .map(u64::from)
-                        .collect(),
-                )
-            })
+            .map(Attack::from)
             .collect();
         let track = EnemyTrack::new(attacks);
-        self.solver.add_track(extern_track.bind().get_id(), track);
+        let index = extern_track.bind().get_id();
+        self.solver.add_track(index, track);
+        godot_print!("added track: {}", index);
     }
     #[func]
-    fn remove_track(&mut self, track: Gd<ExternEnemyTrack>) {
-        self.solver.remove_track(track.bind().get_id());
+    fn remove_track(&mut self, mut extern_track: Gd<ExternEnemyTrack>) {
+        extern_track.bind_mut().unparent_from_solver();
+        let index = extern_track.bind().get_id();
+        self.solver.remove_track(index);
+        godot_print!("removed track: {}", index);
     }
 }
 
@@ -105,6 +80,9 @@ impl SolverInterface {
     }
     pub fn commit_move_now(&mut self, id: NonZeroI64, index: usize) {
         let time_now = self.time_now();
+        if !self.solver.all_tracks_actionable(time_now) {
+            return;
+        }
         if self
             .solver
             .get_track_mut(&id)

@@ -1,0 +1,20 @@
+[gd_resource type="ExternEnemyTrack" load_steps=4 format=3 uid="uid://xd5ssh3iukl2"]
+
+[ext_resource type="Script" uid="uid://bug3mv8a0st4m" path="res://moves/parryable_move.gd" id="1_bqey4"]
+
+[sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_03ndx"]
+frames = Array[int]([12])
+duration = 30
+script = ExtResource("1_bqey4")
+parry_directions = Array[bool]([true])
+metadata/_custom_type_script = "uid://bug3mv8a0st4m"
+
+[sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_bqey4"]
+frames = Array[int]([10, 40])
+duration = 80
+script = ExtResource("1_bqey4")
+parry_directions = Array[bool]([true, false])
+metadata/_custom_type_script = "uid://bug3mv8a0st4m"
+
+[resource]
+attacks = Array[ExternEnemyAttack]([SubResource("ExternEnemyAttack_03ndx"), SubResource("ExternEnemyAttack_bqey4")])

@@ -2,6 +2,7 @@ use super::extern_enemy_attack::ExternEnemyAttack;
 use crate::solver_interface::SolverInterface;
 use godot::classes::Resource;
 use godot::classes::class_macros::private::virtuals::Os::Array;
+use godot::global::godot_print;
 use godot::obj::Gd;
 use godot::obj::WithBaseField;
 use godot::prelude::Base;
@@ -26,10 +27,25 @@ impl ExternEnemyTrack {
     fn get_solver_parent(&self) -> Gd<SolverInterface> {
         self.solver_parent
             .clone()
-            .expect("this is not parented to a solver, can't commit move")
+            .or_else(|| {
+                panic!(
+                    "this {} is not parented to a solver, can't commit move",
+                    self.base().instance_id()
+                )
+            })
+            .unwrap()
     }
     pub fn parent_to_solver(&mut self, solver: Gd<SolverInterface>) {
+        godot_print!(
+            "instance({}) parenting to solver: {}",
+            self.base().instance_id(),
+            solver
+        );
         self.solver_parent = Some(solver);
+    }
+    pub fn unparent_from_solver(&mut self) {
+        godot_print!("instance({}) unparenting...", self.base().instance_id());
+        self.solver_parent = None;
     }
 }
 
