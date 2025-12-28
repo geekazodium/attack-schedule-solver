@@ -36,6 +36,8 @@ env:
   PROJECT_PATH: attack-scheduler/
   RUST_DIR: rust-solver
   CARGO_PROJECT_NAME: attack_scheduler
+  EM_VERSION: 3.1.74
+  EM_CACHE_FOLDER: 'emsdk-cache'
 
 jobs:
   build-rust-wasm32:
@@ -52,22 +54,17 @@ jobs:
     - name: Set Godot4 BIN
       run: | 
         echo "GODOT4_BIN=$GODOT4" >> $GITHUB_ENV
-    
-    - name: Cache EMSDK
-      id: cache-emsdk
-      uses: actions/cache@v4
-      env: 
-        cache-name: "emsdk"
-      with:
-        path: |
-          'emsdk-cache'
-        key: ${{ runner.os }}-emsdk
 
-    - name: Set up Emscripten latest
-      uses: mymindstorm/setup-emsdk@v14
+    - name: Setup EMSDK cache
+      id: cache-system-libraries
+      uses: actions/cache@v2
       with:
-        version: 3.1.74
-        actions-cache-folder: 'emsdk-cache'
+        path: ${{env.EM_CACHE_FOLDER}}
+        key: ${{env.EM_VERSION}}-${{ runner.os }}
+    - uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: ${{env.EM_VERSION}}
+        actions-cache-folder: ${{env.EM_CACHE_FOLDER}}
 
     - name: Verify Emscripten setup
       run: |
