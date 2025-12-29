@@ -46,7 +46,7 @@ impl Attack {
     pub fn get_start_frame(&self, request_frame: u64, first_actionable: u64) -> Option<u64> {
         self.active
             .first()
-            .filter(|first_active| (**first_active + first_actionable <= request_frame))
+            .filter(|first_active| **first_active + first_actionable <= request_frame)
             .map(|x| request_frame - x)
     }
     #[must_use]
