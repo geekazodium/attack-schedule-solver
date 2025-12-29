@@ -46,6 +46,13 @@ impl Solver {
             .iter()
             .any(|(_, value)| !value.is_actionable_now(start_time))
     }
+    pub fn get_non_actionable_tracks(&self, start_time: u64) -> Vec<&NonZeroI64> {
+        self.tracks
+            .iter()
+            .filter(|(_, value)| !value.is_actionable_now(start_time))
+            .map(|(index, _)| index)
+            .collect::<Vec<&NonZeroI64>>()
+    }
     //returns true if the lead request is cleared or if there was no lead request
     fn try_clear_lead_request(&mut self) -> bool {
         if let Some(req) = &self.lead_request {
@@ -75,6 +82,15 @@ impl Solver {
         &mut self,
         random: &mut impl SolverRandomState,
     ) -> Option<&ComplementAttackRequest> {
+        if self.lead_request.is_none() {
+            let mut arr = self.get_non_actionable_tracks(self.current_tick());
+            if arr.len() > 0 {
+                let index = random.next_in_range(arr.len());
+                let key = arr.swap_remove(index);
+                self.change_lead(*key);
+                self.try_create_new_request();
+            }
+        }
         if let Some(request) = self.lead_request.take() {
             self.lead_request = Some(self.solve_request(request, random));
             self.lead_request.as_ref()
@@ -100,6 +116,9 @@ impl Solver {
         random: &mut impl SolverRandomState,
     ) -> ComplementAttackRequest {
         loop {
+            if request.first_req_frame().is_none() {
+                break;
+            }
             let mut possible_commits = self
                 .tracks
                 .iter()
@@ -117,9 +136,6 @@ impl Solver {
             if let Some(track) = self.tracks.get_mut(&track_index.clone()) {
                 let commit = options.swap_remove(index);
                 track.commit(&mut request, commit);
-            }
-            if !request.next_unclaimed() {
-                break;
             }
         }
         request

@@ -26,19 +26,19 @@ script = ExtResource("3_h2yge")
 track = NodePath("../Track1")
 
 [node name="Track2" type="Node2D" parent="."]
-position = Vector2(-246, -323)
+position = Vector2(-200, -350)
 script = ExtResource("4_1bvp3")
 attack_track = ExtResource("2_0xm2m")
 placeholder_spawn_scene = ExtResource("5_lquwl")
 
 [node name="Track1" type="Node2D" parent="."]
-position = Vector2(209, -323)
+position = Vector2(200, -350)
 script = ExtResource("4_1bvp3")
 attack_track = ExtResource("1_ig7tw")
 placeholder_spawn_scene = ExtResource("5_lquwl")
 
 [node name="Track3" type="Node2D" parent="."]
-position = Vector2(-4, -323)
+position = Vector2(0, -350)
 script = ExtResource("4_1bvp3")
 attack_track = ExtResource("1_ig7tw")
 placeholder_spawn_scene = ExtResource("5_lquwl")
@@ -66,7 +66,7 @@ wait_time = 0.5
 one_shot = true
 
 [node name="Line2D" type="Line2D" parent="Deflection"]
-points = PackedVector2Array(487, 0, -474, 0)
+points = PackedVector2Array(1000, 0, -1000, 0)
 
 [node name="Left" type="ShapeCast2D" parent="Deflection"]
 visible = false
@@ -77,7 +77,7 @@ collide_with_areas = true
 script = ExtResource("7_5vw27")
 
 [node name="LeftIndicator" type="Line2D" parent="Deflection/Left"]
-points = PackedVector2Array(487, 0, -474, 0)
+points = PackedVector2Array(1000, 0, -1000, 0)
 default_color = Color(1, 0, 0, 1)
 
 [node name="Right" type="ShapeCast2D" parent="Deflection"]
@@ -90,7 +90,7 @@ collide_with_areas = true
 script = ExtResource("7_5vw27")
 
 [node name="RightIndicator" type="Line2D" parent="Deflection/Right"]
-points = PackedVector2Array(487, 0, -474, 0)
+points = PackedVector2Array(1000, 0, -1000, 0)
 default_color = Color(0, 0, 1, 1)
 
 [node name="Damage" type="Area2D" parent="."]
@@ -98,7 +98,7 @@ position = Vector2(0, 296)
 collision_layer = 0
 collision_mask = 3
 script = ExtResource("7_272bh")
-max_health = 5
+max_health = 10000000
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Damage"]
 shape = SubResource("RectangleShape2D_7mycd")

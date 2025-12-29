@@ -12,38 +12,18 @@ pub struct ComplementAttackRequest {
     request_start_frame: u64,
 }
 
-// impl From<&Attack> for Option<ComplementAttackRequest> {
-//     fn from(attack: &Attack) -> Self {
-//         ComplementAttackRequest::new(
-//             attack.active_request_frames().clone(),
-//             0,
-//             attack.get_full_duration(),
-//         )
-//     }
-// }
-
-// impl From<&Attack> for ComplementAttackRequest {
-//     fn from(value: &Attack) -> Self {
-//         let maybe: Option<ComplementAttackRequest> = value.into();
-//         maybe.expect("attack instance has no valid requests.")
-//     }
-// }
-
-// impl From<Attack> for ComplementAttackRequest {
-//     fn from(value: Attack) -> Self {
-//         let maybe: Option<ComplementAttackRequest> = (&value).into();
-//         maybe.expect("attack instance has no valid requests.")
-//     }
-// }
-
 impl ComplementAttackRequest {
-    pub fn new(vec: Vec<u64>, request_source_claim_end: u64, start_frame: u64) -> Self {
-        Self {
-            request_offset: 0,
-            taken_requests: vec.iter().map(|_| false).collect(),
-            request_frames: vec,
-            request_source_claim_end,
-            request_start_frame: start_frame,
+    pub fn new(vec: Vec<u64>, request_source_claim_end: u64, start_frame: u64) -> Option<Self> {
+        if vec.len() > 0 {
+            Some(Self {
+                request_offset: 0,
+                taken_requests: vec.iter().map(|_| false).collect(),
+                request_frames: vec,
+                request_source_claim_end,
+                request_start_frame: start_frame,
+            })
+        } else {
+            None
         }
     }
     pub(crate) fn first_req_frame(&self) -> Option<u64> {
@@ -124,7 +104,7 @@ mod complement_attack_request_tests {
 
     #[test]
     fn test_filter() {
-        let mut req = ComplementAttackRequest::new(vec![20, 32, 40], 100, 0);
+        let mut req = ComplementAttackRequest::new(vec![20, 32, 40], 100, 0).unwrap();
         req.taken_requests[2] = true;
 
         assert_eq!(req.iter_skip_start().collect::<Vec<u64>>(), vec![32]);
@@ -132,7 +112,7 @@ mod complement_attack_request_tests {
 
     #[test]
     fn test_filter_first() {
-        let mut req = ComplementAttackRequest::new(vec![20, 32, 40, 90], 100, 0);
+        let mut req = ComplementAttackRequest::new(vec![20, 32, 40, 90], 100, 0).unwrap();
         req.taken_requests[2] = true;
         req.taken_requests[0] = true;
 
@@ -148,7 +128,7 @@ mod complement_attack_request_tests {
 
     #[test]
     fn test_skip() {
-        let mut req = ComplementAttackRequest::new(vec![20, 32, 40, 90], 100, 0);
+        let mut req = ComplementAttackRequest::new(vec![20, 32, 40, 90], 100, 0).unwrap();
         req.taken_requests[2] = true;
         req.taken_requests[0] = true;
 
@@ -162,7 +142,7 @@ mod complement_attack_request_tests {
 
     #[test]
     fn test_restore() {
-        let mut req = ComplementAttackRequest::new(vec![20, 32, 40, 90], 100, 0);
+        let mut req = ComplementAttackRequest::new(vec![20, 32, 40, 90], 100, 0).unwrap();
         req.taken_requests[2] = true;
         req.taken_requests[0] = true;
 
@@ -183,7 +163,7 @@ mod complement_attack_request_tests {
 
     #[test]
     fn test_offset() {
-        let mut req = ComplementAttackRequest::new(vec![20, 32, 40, 90], 100, 20);
+        let mut req = ComplementAttackRequest::new(vec![20, 32, 40, 90], 100, 20).unwrap();
         req.taken_requests[2] = true;
 
         assert_eq!(req.iter_skip_start().collect::<Vec<u64>>(), vec![52, 110]);

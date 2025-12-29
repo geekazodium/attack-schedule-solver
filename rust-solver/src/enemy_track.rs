@@ -102,7 +102,7 @@ impl EnemyTrack {
                 .get_attack(self)
                 .get_attack()
                 .to_request(commit.get_start_frame())
-        })
+        }).flatten()
     }
     #[must_use]
     pub fn first_actionable_frame(&self) -> u64 {
@@ -150,6 +150,17 @@ impl EnemyTrack {
 #[cfg(test)]
 mod enemy_track_tests {
     use super::*;
+
+    impl From<&Attack> for ComplementAttackRequest{
+        fn from(value: &Attack) -> Self {
+            value.to_request(0).unwrap()
+        }
+    }
+    impl From<Attack> for ComplementAttackRequest{
+        fn from(value: Attack) -> Self {
+            (&value).into()
+        }
+    }
 
     impl EnemyTrack {
         #[must_use]
@@ -205,8 +216,7 @@ mod enemy_track_tests {
             Attack::new(20, vec![12], vec![]),
         ]);
         let mock_request: ComplementAttackRequest =
-            Attack::new(30, vec![], vec![20, 28]).to_request(0);
-
+            Attack::new(30, vec![], vec![20, 28]).into();
         assert_commits_length(&mock_request, &mock_track, 2);
     }
 
@@ -217,7 +227,7 @@ mod enemy_track_tests {
             Attack::new(20, vec![8, 10, 16], vec![4]),
         ]);
         let mock_lead_action = Attack::new(30, vec![], vec![16, 24]);
-        let mut mock_request = mock_lead_action.to_request(0);
+        let mut mock_request = mock_lead_action.into();
 
         commit_and_assert(&mut mock_request, &mut mock_track, 0, 1, false);
 
@@ -234,7 +244,7 @@ mod enemy_track_tests {
         let mock_lead_action = Attack::new(25, vec![10, 16], vec![13, 29]);
         assert!(
             mock_track
-                .possible_now_moves(&mock_lead_action.to_request(0))
+                .possible_now_moves(&mock_lead_action.into())
                 .is_empty()
         );
     }
@@ -247,7 +257,7 @@ mod enemy_track_tests {
         ]);
 
         let src = Attack::new(30, vec![], vec![20, 28]);
-        let mut mock_request: ComplementAttackRequest = src.to_request(0);
+        let mut mock_request: ComplementAttackRequest = src.into();
 
         commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
         commit_and_assert(&mut mock_request, &mut mock_track, 0, 1, false);
@@ -262,7 +272,7 @@ mod enemy_track_tests {
         ]);
 
         let src = Attack::new(25, vec![], vec![10, 18]);
-        let mut mock_request: ComplementAttackRequest = src.to_request(0);
+        let mut mock_request: ComplementAttackRequest = src.into();
 
         let restore_point_a = mock_request.get_restore_point();
         commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
@@ -292,7 +302,7 @@ mod enemy_track_tests {
         ]);
 
         let mock_lead_track = Attack::new(25, vec![], vec![10, 18]);
-        let mut mock_request: ComplementAttackRequest = mock_lead_track.to_request(0);
+        let mut mock_request: ComplementAttackRequest = mock_lead_track.into();
 
         let can_meet = mock_track.possible_future_commits(&mut mock_request);
         dbg!(&can_meet);

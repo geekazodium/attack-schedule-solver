@@ -11,7 +11,7 @@ parry_directions = Array[bool]([false, true])
 metadata/_custom_type_script = "uid://bug3mv8a0st4m"
 
 [sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_p55vm"]
-frames = Array[int]([15, 70])
+frames = Array[int]([15, 40])
 duration = 60
 script = ExtResource("1_p55vm")
 parry_directions = Array[int]([0, 0])
