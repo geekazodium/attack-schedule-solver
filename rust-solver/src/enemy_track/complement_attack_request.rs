@@ -14,7 +14,9 @@ pub struct ComplementAttackRequest {
 
 impl ComplementAttackRequest {
     pub fn new(vec: Vec<u64>, request_source_claim_end: u64, start_frame: u64) -> Option<Self> {
-        if vec.len() > 0 {
+        if vec.is_empty() {
+            None
+        } else {
             Some(Self {
                 request_offset: 0,
                 taken_requests: vec.iter().map(|_| false).collect(),
@@ -22,8 +24,6 @@ impl ComplementAttackRequest {
                 request_source_claim_end,
                 request_start_frame: start_frame,
             })
-        } else {
-            None
         }
     }
     pub(crate) fn first_req_frame(&self) -> Option<u64> {

@@ -7,7 +7,6 @@ use crate::solver_interface::godot_random::GodotRandom;
 use godot::classes::INode;
 use godot::classes::Node;
 use godot::global::godot_print;
-use godot::global::godot_warn;
 use godot::obj::Gd;
 use godot::obj::WithBaseField;
 use godot::prelude::Base;
@@ -37,13 +36,7 @@ impl INode for SolverInterface {
     fn physics_process(&mut self, _delta: f64) {
         let mut random = GodotRandom {};
 
-        // godot_print!("creating req...");
-        self.solver.try_create_new_request();
-        // godot_print!("running solver...");
-        if self.solver.solve(&mut random).is_some() {
-        } else {
-            godot_warn!("no attack in lead track, failed to create request");
-        }
+        self.solver.solve(&mut random);
         self.solver.update_latest_nonpast();
         self.solver.tick();
     }
@@ -103,5 +96,8 @@ impl SolverInterface {
         let time_now = self.time_now() - 1;
         self.get_latest_nonpast_commit(id)
             .filter(|v| v.get_start_frame() == time_now)
+    }
+    pub fn get_current_lead(&self) -> Option<NonZeroI64> {
+        self.solver.get_lead()
     }
 }

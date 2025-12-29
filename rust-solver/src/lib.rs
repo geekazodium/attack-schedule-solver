@@ -40,9 +40,9 @@ mod tests {
     fn solve_select_move_success() {
         let mut random = HashRandom::new(120);
         let mut lead_track = EnemyTrack::new(vec![
-            Attack::new(30, vec![15, 25], vec![20]),
-            Attack::new(40, vec![38], vec![20, 30]),
-            Attack::new(80, vec![38], vec![20, 30, 60]),
+            Attack::new_expect(30, vec![15, 25], vec![20]),
+            Attack::new_expect(40, vec![38], vec![20, 30]),
+            Attack::new_expect(80, vec![38], vec![20, 30, 60]),
         ]);
 
         assert!(lead_track.commit_by_index(2, 2));
@@ -56,16 +56,16 @@ mod tests {
             solver.add_track(
                 NonZeroI64::new(count + 1).unwrap(),
                 EnemyTrack::new(vec![
-                    Attack::new(30, vec![15, 25], vec![20]),
-                    Attack::new(40, vec![10], vec![20, 30]),
-                    Attack::new(40, vec![20], vec![30]),
-                    Attack::new(40, vec![30], vec![20]),
+                    Attack::new_expect(30, vec![15, 25], vec![20]),
+                    Attack::new_expect(40, vec![10], vec![20, 30]),
+                    Attack::new_expect(40, vec![20], vec![30]),
+                    Attack::new_expect(40, vec![30], vec![20]),
                 ]),
             );
         }
 
         let now = Instant::now();
-        solver.try_create_new_request();
+        // solver.try_create_new_request();
         let request = solver.solve(&mut random);
         let elapsed = Instant::now() - now;
         dbg!(elapsed);
@@ -80,9 +80,9 @@ mod tests {
     fn test_select_move_and_tick() {
         let mut random = HashRandom::new(120);
         let mut lead_track = EnemyTrack::new(vec![
-            Attack::new(30, vec![15, 25], vec![20]),
-            Attack::new(40, vec![38], vec![20, 30]),
-            Attack::new(80, vec![38], vec![20, 30, 60]),
+            Attack::new_expect(30, vec![15, 25], vec![20]),
+            Attack::new_expect(40, vec![38], vec![20, 30]),
+            Attack::new_expect(80, vec![38], vec![20, 30, 60]),
         ]);
 
         assert!(lead_track.commit_by_index(2, 2));
@@ -96,17 +96,17 @@ mod tests {
             solver.add_track(
                 NonZeroI64::new(count + 1).unwrap(),
                 EnemyTrack::new(vec![
-                    Attack::new(30, vec![15, 25], vec![20]),
-                    Attack::new(40, vec![10], vec![20, 30]),
-                    Attack::new(40, vec![20], vec![30]),
-                    Attack::new(40, vec![30], vec![20]),
+                    Attack::new_expect(30, vec![15, 25], vec![20]),
+                    Attack::new_expect(40, vec![10], vec![20, 30]),
+                    Attack::new_expect(40, vec![20], vec![30]),
+                    Attack::new_expect(40, vec![30], vec![20]),
                 ]),
             );
         }
 
         for now in 0..120 {
             solver.get_track_mut(lead_key).commit_by_index(2, now);
-            solver.try_create_new_request();
+            // solver.try_create_new_request();
             let _ = solver.solve(&mut random);
             solver.tick();
             // dbg!(request.unwrap().claim_end_time());

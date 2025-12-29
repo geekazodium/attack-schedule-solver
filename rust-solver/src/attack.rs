@@ -8,8 +8,30 @@ pub struct Attack {
 }
 
 impl Attack {
+    #[cfg(test)]
     #[must_use]
-    pub fn new(duration: u64, active: Vec<u64>, request_frames: Vec<u64>) -> Self {
+    pub fn new_expect(duration: u64, active: Vec<u64>, request_frames: Vec<u64>) -> Self {
+        Self::new(duration, active, request_frames).expect("invalid instance parameters")
+    }
+    #[must_use]
+    pub fn new(duration: u64, active: Vec<u64>, request_frames: Vec<u64>) -> Option<Self> {
+        if !active.is_sorted() {
+            return None;
+        }
+        if !request_frames.is_sorted() {
+            return None;
+        }
+        if active.last().is_some_and(|v| *v >= duration) {
+            return None;
+        }
+        if request_frames.last().is_some_and(|v| *v >= duration) {
+            return None;
+        }
+
+        unsafe { Some(Self::new_unchecked(duration, active, request_frames)) }
+    }
+    #[must_use]
+    pub unsafe fn new_unchecked(duration: u64, active: Vec<u64>, request_frames: Vec<u64>) -> Self {
         Self {
             duration,
             active,
@@ -49,24 +71,24 @@ mod attack_tests {
 
     #[test]
     fn start_frame_valid() {
-        let a = Attack::new(10, vec![8], vec![4]);
+        let a = Attack::new_expect(10, vec![8], vec![4]);
         assert_eq!(a.get_start_frame(15, 0), Some(7));
     }
 
     #[test]
     fn start_frame_invalid_due_to_actionable() {
-        let a = Attack::new(10, vec![8], vec![4]);
+        let a = Attack::new_expect(10, vec![8], vec![4]);
         assert_eq!(a.get_start_frame(15, 8), None);
     }
     #[test]
     fn start_frame_invalid_due_to_move_length() {
         let a = Attack::new(10, vec![16], vec![4]);
-        assert_eq!(a.get_start_frame(15, 0), None);
+        assert!(a.is_none());
     }
 
     #[test]
     fn test_offsetting() {
-        let a = Attack::new(10, vec![8, 10, 24], vec![4]);
+        let a = Attack::new_expect(30, vec![8, 10, 24], vec![4]);
         let mut expected = vec![28, 30, 44];
         for n in a.get_active_frames(20) {
             assert_eq!(expected.remove(0), n);

@@ -38,6 +38,8 @@ func instantiate_parry(parry_dir: int) -> Area2D:
 	return scene;
 
 func _physics_process(_delta: float) -> void:
+	if self.attack_track.is_current_lead():
+		self.instantiate_no_collide(Color(0,0,1,.1));
 	var updated: bool = self.try_update_current_move();
 	var index = attack_track.attack_index_on_this_frame();
 	if index < 0:
@@ -49,16 +51,15 @@ func _physics_process(_delta: float) -> void:
 
 func start_attack(index: int) -> void:
 	self.current_move = self.attack_track.attacks[index];
-	self.instantiate_no_collide(Color(.2,.2,.2,.2));
 	self.current_move_frame = 0;
 
 func try_update_current_move() -> bool:
 	if self.current_move != null:
 		if self.current_move_frame > self.current_move.duration:
-			self.instantiate_no_collide(Color(.7,.0,.7,.2));
 			self.current_move = null;
 	if self.current_move == null:
 		return false;
+	self.instantiate_no_collide(Color(.2,.2,.2,.2));
 	self.update_current_move();
 	self.current_move_frame += 1;
 	return true;

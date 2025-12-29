@@ -67,4 +67,11 @@ impl ExternEnemyTrack {
                 i64::try_from(v.get_index()).expect("usize out of i64 range")
             })
     }
+    #[func]
+    fn is_current_lead(&self) -> bool {
+        self.get_solver_parent()
+            .bind()
+            .get_current_lead()
+            .is_some_and(|v| v.eq(&self.get_id()))
+    }
 }

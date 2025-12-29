@@ -33,5 +33,6 @@ impl From<Gd<ExternEnemyAttack>> for Attack {
             attack.bind().get_frames_as_vec(),
             attack.bind().get_requests_as_vec(),
         )
+        .expect("invalid data!")
     }
 }

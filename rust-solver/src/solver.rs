@@ -24,14 +24,20 @@ impl Solver {
     pub fn change_lead(&mut self, track_id: NonZeroI64) {
         self.lead_track_id = Some(track_id);
     }
+    pub fn get_lead(&self) -> Option<NonZeroI64> {
+        self.lead_track_id
+    }
+    fn clear_lead(&mut self) {
+        self.lead_track_id = None;
+        self.lead_request = None;
+    }
     pub fn add_track(&mut self, index: NonZeroI64, track: EnemyTrack) {
         self.tracks.insert(index, track);
     }
     pub fn remove_track(&mut self, index: NonZeroI64) {
         self.tracks.remove(&index);
         if self.lead_track_id == Some(index) {
-            self.lead_request = None;
-            self.lead_track_id = None;
+            self.clear_lead();
         }
     }
     pub fn get_track_mut(&mut self, index: NonZeroI64) -> &mut EnemyTrack {
@@ -53,6 +59,12 @@ impl Solver {
             .map(|(index, _)| index)
             .collect::<Vec<&NonZeroI64>>()
     }
+    pub fn tick(&mut self) {
+        self.time_now_frames += 1;
+    }
+    pub fn current_tick(&self) -> u64 {
+        self.time_now_frames
+    }
     //returns true if the lead request is cleared or if there was no lead request
     fn try_clear_lead_request(&mut self) -> bool {
         if let Some(req) = &self.lead_request {
@@ -65,39 +77,22 @@ impl Solver {
         }
         true
     }
-    pub fn tick(&mut self) {
-        self.time_now_frames += 1;
-    }
-    pub fn current_tick(&self) -> u64 {
-        self.time_now_frames
-    }
-    pub fn try_create_new_request(&mut self) -> Option<&ComplementAttackRequest> {
+    fn update_current_request(&mut self, random: &mut impl SolverRandomState) {
         if !self.try_clear_lead_request() {
-            return None;
+            return;
         }
-        self.lead_request = self.get_lead_track()?.last_queued_attack_as_request();
-        self.lead_request.as_ref()
-    }
-    pub fn solve(
-        &mut self,
-        random: &mut impl SolverRandomState,
-    ) -> Option<&ComplementAttackRequest> {
-        if self.lead_request.is_none() {
+        if self.is_valid_lead() {
             let mut arr = self.get_non_actionable_tracks(self.current_tick());
-            if arr.len() > 0 {
-                let index = random.next_in_range(arr.len());
-                let key = arr.swap_remove(index);
-                self.change_lead(*key);
-                self.try_create_new_request();
+            if arr.is_empty() {
+                return;
             }
+            let index = random.next_in_range(arr.len());
+            let key = arr.swap_remove(index);
+            self.change_lead(*key);
         }
-        if let Some(request) = self.lead_request.take() {
-            self.lead_request = Some(self.solve_request(request, random));
-            self.lead_request.as_ref()
-        } else {
-            println!("no last queued attack, can not create request and solve");
-            None
-        }
+        self.lead_request = self
+            .get_lead_track()
+            .and_then(EnemyTrack::last_queued_attack_as_request);
     }
     pub fn update_latest_nonpast(&mut self) {
         let curr_tick = self.current_tick();
@@ -105,10 +100,12 @@ impl Solver {
             value.update_latest_nonpast(curr_tick);
         }
     }
-    fn get_lead_track(&mut self) -> Option<&mut EnemyTrack> {
-        self.lead_track_id
-            .as_ref()
-            .and_then(|v| self.tracks.get_mut(v))
+    fn get_lead_track(&self) -> Option<&EnemyTrack> {
+        self.lead_track_id.as_ref().and_then(|v| self.tracks.get(v))
+    }
+    fn is_valid_lead(&self) -> bool {
+        self.get_lead_track()
+            .is_none_or(|v| v.is_actionable_now(self.current_tick()))
     }
     fn solve_request(
         &mut self,
@@ -122,7 +119,7 @@ impl Solver {
             let mut possible_commits = self
                 .tracks
                 .iter()
-                .filter(|(index, _)| self.lead_track_id.is_none_or(|i| !index.eq(&&i)))
+                .filter(|(index, _)| self.lead_track_id.is_none_or(|i| !i.eq(*index)))
                 .map(|(index, track)| (index, track.possible_future_commits(&mut request)))
                 .filter(|(_, b)| !b.is_empty())
                 .collect::<Vec<_>>();
@@ -139,6 +136,14 @@ impl Solver {
             }
         }
         request
+    }
+    pub fn solve(&mut self, random: &mut impl SolverRandomState) {
+        self.update_current_request(random);
+        if let Some(request) = self.lead_request.take() {
+            self.lead_request = Some(self.solve_request(request, random));
+        } else {
+            println!("no last queued attack, can not create request and solve");
+        }
     }
 }
 

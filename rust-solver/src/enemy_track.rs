@@ -97,12 +97,12 @@ impl EnemyTrack {
         self.future_stack.last()
     }
     pub fn last_queued_attack_as_request(&self) -> Option<ComplementAttackRequest> {
-        self.last_future_stack_item().map(|commit| {
+        self.last_future_stack_item().and_then(|commit| {
             commit
                 .get_attack(self)
                 .get_attack()
                 .to_request(commit.get_start_frame())
-        }).flatten()
+        })
     }
     #[must_use]
     pub fn first_actionable_frame(&self) -> u64 {
@@ -151,12 +151,12 @@ impl EnemyTrack {
 mod enemy_track_tests {
     use super::*;
 
-    impl From<&Attack> for ComplementAttackRequest{
+    impl From<&Attack> for ComplementAttackRequest {
         fn from(value: &Attack) -> Self {
             value.to_request(0).unwrap()
         }
     }
-    impl From<Attack> for ComplementAttackRequest{
+    impl From<Attack> for ComplementAttackRequest {
         fn from(value: Attack) -> Self {
             (&value).into()
         }
@@ -211,22 +211,22 @@ mod enemy_track_tests {
     #[test]
     fn can_meet_request_test() {
         let mock_track = EnemyTrack::new(vec![
-            Attack::new(20, vec![8, 10, 16], vec![]),
-            Attack::new(10, vec![8, 16], vec![]),
-            Attack::new(20, vec![12], vec![]),
+            Attack::new_expect(20, vec![8, 10, 16], vec![]),
+            Attack::new_expect(20, vec![8, 16], vec![]),
+            Attack::new_expect(20, vec![12], vec![]),
         ]);
         let mock_request: ComplementAttackRequest =
-            Attack::new(30, vec![], vec![20, 28]).into();
+            Attack::new_expect(30, vec![], vec![20, 28]).into();
         assert_commits_length(&mock_request, &mock_track, 2);
     }
 
     #[test]
     fn commit_and_uncommit_test() {
         let mut mock_track = EnemyTrack::new(vec![
-            Attack::new(10, vec![8, 16], vec![2]),
-            Attack::new(20, vec![8, 10, 16], vec![4]),
+            Attack::new_expect(18, vec![8, 16], vec![2]),
+            Attack::new_expect(20, vec![8, 10, 16], vec![4]),
         ]);
-        let mock_lead_action = Attack::new(30, vec![], vec![16, 24]);
+        let mock_lead_action = Attack::new_expect(30, vec![], vec![16, 24]);
         let mut mock_request = mock_lead_action.into();
 
         commit_and_assert(&mut mock_request, &mut mock_track, 0, 1, false);
@@ -237,11 +237,11 @@ mod enemy_track_tests {
     #[test]
     fn fail_meet_request_test() {
         let mock_track = EnemyTrack::new(vec![
-            Attack::new(10, vec![8, 16], vec![2]),
-            Attack::new(20, vec![12, 20], vec![4]),
+            Attack::new_expect(18, vec![8, 16], vec![2]),
+            Attack::new_expect(22, vec![12, 20], vec![4]),
         ]);
 
-        let mock_lead_action = Attack::new(25, vec![10, 16], vec![13, 29]);
+        let mock_lead_action = Attack::new_expect(40, vec![10, 16], vec![13, 29]);
         assert!(
             mock_track
                 .possible_now_moves(&mock_lead_action.into())
@@ -252,11 +252,11 @@ mod enemy_track_tests {
     #[test]
     fn can_meet_multuple_request() {
         let mut mock_track = EnemyTrack::new(vec![
-            Attack::new(10, vec![1, 9], vec![2]),
-            Attack::new(13, vec![12], vec![4]),
+            Attack::new_expect(10, vec![1, 9], vec![2]),
+            Attack::new_expect(13, vec![12], vec![4]),
         ]);
 
-        let src = Attack::new(30, vec![], vec![20, 28]);
+        let src = Attack::new_expect(30, vec![], vec![20, 28]);
         let mut mock_request: ComplementAttackRequest = src.into();
 
         commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
@@ -266,12 +266,12 @@ mod enemy_track_tests {
     #[test]
     fn can_deny_inapplicable_request() {
         let mut mock_track = EnemyTrack::new(vec![
-            Attack::new(10, vec![1, 9], vec![]),
-            Attack::new(6, vec![5], vec![]),
-            Attack::new(13, vec![2, 4, 6], vec![]),
+            Attack::new_expect(10, vec![1, 9], vec![]),
+            Attack::new_expect(6, vec![5], vec![]),
+            Attack::new_expect(13, vec![2, 4, 6], vec![]),
         ]);
 
-        let src = Attack::new(25, vec![], vec![10, 18]);
+        let src = Attack::new_expect(25, vec![], vec![10, 18]);
         let mut mock_request: ComplementAttackRequest = src.into();
 
         let restore_point_a = mock_request.get_restore_point();
@@ -296,12 +296,12 @@ mod enemy_track_tests {
     #[test]
     fn can_match_all_futures() {
         let mock_track = EnemyTrack::new(vec![
-            Attack::new(10, vec![1, 10], vec![]),
-            Attack::new(6, vec![5], vec![]),
-            Attack::new(13, vec![2, 4, 6], vec![]),
+            Attack::new_expect(11, vec![1, 10], vec![]),
+            Attack::new_expect(6, vec![5], vec![]),
+            Attack::new_expect(13, vec![2, 4, 6], vec![]),
         ]);
 
-        let mock_lead_track = Attack::new(25, vec![], vec![10, 18]);
+        let mock_lead_track = Attack::new_expect(25, vec![], vec![10, 18]);
         let mut mock_request: ComplementAttackRequest = mock_lead_track.into();
 
         let can_meet = mock_track.possible_future_commits(&mut mock_request);

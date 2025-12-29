@@ -20,10 +20,16 @@ size = Vector2(1194, 74)
 
 [node name="Main" type="Node2D"]
 
-[node name="initiator" type="Node" parent="." node_paths=PackedStringArray("track")]
+[node name="initiator" type="Node" parent="." node_paths=PackedStringArray("track", "next_request_timer")]
 process_physics_priority = 1
 script = ExtResource("3_h2yge")
 track = NodePath("../Track1")
+next_request_timer = NodePath("Timer")
+
+[node name="Timer" type="Timer" parent="initiator"]
+process_callback = 0
+wait_time = 2.0
+one_shot = true
 
 [node name="Track2" type="Node2D" parent="."]
 position = Vector2(-200, -350)
@@ -98,7 +104,7 @@ position = Vector2(0, 296)
 collision_layer = 0
 collision_mask = 3
 script = ExtResource("7_272bh")
-max_health = 10000000
+max_health = 8
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Damage"]
 shape = SubResource("RectangleShape2D_7mycd")
