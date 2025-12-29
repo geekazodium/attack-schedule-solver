@@ -1,0 +1,22 @@
+[gd_resource type="ExternEnemyTrack" load_steps=4 format=3 uid="uid://bfs5bwm58rt22"]
+
+[ext_resource type="Script" uid="uid://bug3mv8a0st4m" path="res://moves/parryable_move.gd" id="1_jodoy"]
+
+[sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_ayxmx"]
+frames = Array[int]([15, 40])
+requests = Array[int]([50])
+duration = 60
+script = ExtResource("1_jodoy")
+parry_directions = Array[int]([0, 1])
+metadata/_custom_type_script = "uid://bug3mv8a0st4m"
+
+[sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_ey1jo"]
+frames = Array[int]([5, 56])
+requests = Array[int]([25])
+duration = 80
+script = ExtResource("1_jodoy")
+parry_directions = Array[int]([1, 1])
+metadata/_custom_type_script = "uid://bug3mv8a0st4m"
+
+[resource]
+attacks = Array[ExternEnemyAttack]([SubResource("ExternEnemyAttack_ayxmx"), SubResource("ExternEnemyAttack_ey1jo")])

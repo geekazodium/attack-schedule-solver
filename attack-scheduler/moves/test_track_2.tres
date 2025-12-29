@@ -3,19 +3,19 @@
 [ext_resource type="Script" uid="uid://bug3mv8a0st4m" path="res://moves/parryable_move.gd" id="1_bqey4"]
 
 [sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_03ndx"]
-frames = Array[int]([12])
-requests = Array[int]([20])
+frames = Array[int]([25])
+requests = Array[int]([12])
 duration = 30
 script = ExtResource("1_bqey4")
-parry_directions = Array[bool]([true])
+parry_directions = Array[int]([1])
 metadata/_custom_type_script = "uid://bug3mv8a0st4m"
 
 [sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_bqey4"]
 frames = Array[int]([10, 50])
-requests = Array[int]([30])
-duration = 60
+requests = Array[int]([30, 55])
+duration = 65
 script = ExtResource("1_bqey4")
-parry_directions = Array[bool]([true, false])
+parry_directions = Array[int]([1, 0])
 metadata/_custom_type_script = "uid://bug3mv8a0st4m"
 
 [resource]

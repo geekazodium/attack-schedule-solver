@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dbmqb5jaq1ajk"]
+[gd_scene load_steps=13 format=3 uid="uid://dbmqb5jaq1ajk"]
 
 [ext_resource type="ExternEnemyTrack" uid="uid://boplywh12t4ks" path="res://moves/test_track_1.tres" id="1_ig7tw"]
 [ext_resource type="ExternEnemyTrack" uid="uid://xd5ssh3iukl2" path="res://moves/test_track_2.tres" id="2_0xm2m"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://dit44mmvxk3sj" path="res://show_moves.gd" id="4_1bvp3"]
 [ext_resource type="PackedScene" uid="uid://daiimno0y6uad" path="res://falling not a note/placeholder.tscn" id="5_lquwl"]
 [ext_resource type="Script" uid="uid://chlqo7nytk6lx" path="res://deflection.gd" id="6_7mycd"]
+[ext_resource type="ExternEnemyTrack" uid="uid://bfs5bwm58rt22" path="res://moves/test_track_3.tres" id="6_kek77"]
 [ext_resource type="Script" uid="uid://bernm1mp5eohb" path="res://hit_shapecast.gd" id="7_5vw27"]
 [ext_resource type="Script" uid="uid://rje2exq5ixdp" path="res://damage.gd" id="7_272bh"]
 
@@ -31,22 +32,22 @@ process_callback = 0
 wait_time = 2.0
 one_shot = true
 
-[node name="Track2" type="Node2D" parent="."]
-position = Vector2(-200, -350)
-script = ExtResource("4_1bvp3")
-attack_track = ExtResource("2_0xm2m")
-placeholder_spawn_scene = ExtResource("5_lquwl")
-
 [node name="Track1" type="Node2D" parent="."]
 position = Vector2(200, -350)
 script = ExtResource("4_1bvp3")
 attack_track = ExtResource("1_ig7tw")
 placeholder_spawn_scene = ExtResource("5_lquwl")
 
+[node name="Track2" type="Node2D" parent="."]
+position = Vector2(-200, -350)
+script = ExtResource("4_1bvp3")
+attack_track = ExtResource("2_0xm2m")
+placeholder_spawn_scene = ExtResource("5_lquwl")
+
 [node name="Track3" type="Node2D" parent="."]
 position = Vector2(0, -350)
 script = ExtResource("4_1bvp3")
-attack_track = ExtResource("1_ig7tw")
+attack_track = ExtResource("6_kek77")
 placeholder_spawn_scene = ExtResource("5_lquwl")
 
 [node name="Camera2D" type="Camera2D" parent="."]
@@ -104,7 +105,7 @@ position = Vector2(0, 296)
 collision_layer = 0
 collision_mask = 3
 script = ExtResource("7_272bh")
-max_health = 8
+max_health = 15
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Damage"]
 shape = SubResource("RectangleShape2D_7mycd")

@@ -1,13 +1,13 @@
-[gd_resource type="ExternEnemyTrack" load_steps=5 format=3 uid="uid://boplywh12t4ks"]
+[gd_resource type="ExternEnemyTrack" load_steps=4 format=3 uid="uid://boplywh12t4ks"]
 
 [ext_resource type="Script" uid="uid://bug3mv8a0st4m" path="res://moves/parryable_move.gd" id="1_p55vm"]
 
 [sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_bqcr3"]
-frames = Array[int]([10, 18])
-requests = Array[int]([26])
-duration = 40
+frames = Array[int]([10])
+requests = Array[int]([40, 75])
+duration = 90
 script = ExtResource("1_p55vm")
-parry_directions = Array[bool]([false, true])
+parry_directions = Array[int]([0, 0])
 metadata/_custom_type_script = "uid://bug3mv8a0st4m"
 
 [sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_p55vm"]
@@ -18,12 +18,5 @@ script = ExtResource("1_p55vm")
 parry_directions = Array[int]([0, 0])
 metadata/_custom_type_script = "uid://bug3mv8a0st4m"
 
-[sub_resource type="ExternEnemyAttack" id="ExternEnemyAttack_p0rsu"]
-frames = Array[int]([16])
-duration = 30
-script = ExtResource("1_p55vm")
-parry_directions = Array[int]([0])
-metadata/_custom_type_script = "uid://bug3mv8a0st4m"
-
 [resource]
-attacks = Array[ExternEnemyAttack]([SubResource("ExternEnemyAttack_bqcr3"), SubResource("ExternEnemyAttack_p55vm"), SubResource("ExternEnemyAttack_p0rsu")])
+attacks = Array[ExternEnemyAttack]([SubResource("ExternEnemyAttack_bqcr3"), SubResource("ExternEnemyAttack_p55vm")])
