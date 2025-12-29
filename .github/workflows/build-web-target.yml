@@ -102,6 +102,12 @@ jobs:
       run: | 
         rm ${{env.RUST_DIR}}/Cargo.lock
 
+    - if: ${{steps.rust-deps-check.outputs.cache-hit != 'true'}}
+      name: remove_current_cargo_lock
+      working-directory: ${{env.RUST_DIR}}
+      run: |
+        cargo check
+    
     - name: caches rust directory
       id: cache-rust-deps-release
       uses: actions/cache@v4
