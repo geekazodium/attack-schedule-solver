@@ -50,19 +50,19 @@ impl Solver {
         !self
             .tracks
             .iter()
-            .any(|(_, value)| !value.is_actionable_now(start_time))
+            .any(|(_, value)| !value.is_actionable_now(start_time, self.time_now_frames()))
     }
     pub fn get_non_actionable_tracks(&self, start_time: u64) -> Vec<&NonZeroI64> {
         self.tracks
             .iter()
-            .filter(|(_, value)| !value.is_actionable_now(start_time))
+            .filter(|(_, value)| !value.is_actionable_now(start_time, self.time_now_frames()))
             .map(|(index, _)| index)
             .collect::<Vec<&NonZeroI64>>()
     }
     pub fn tick(&mut self) {
         self.time_now_frames += 1;
     }
-    pub fn current_tick(&self) -> u64 {
+    pub fn time_now_frames(&self) -> u64 {
         self.time_now_frames
     }
     //returns true if the lead request is cleared or if there was no lead request
@@ -82,7 +82,7 @@ impl Solver {
             return;
         }
         if self.is_valid_lead() {
-            let mut arr = self.get_non_actionable_tracks(self.current_tick());
+            let mut arr = self.get_non_actionable_tracks(self.time_now_frames());
             if arr.is_empty() {
                 return;
             }
@@ -95,7 +95,7 @@ impl Solver {
             .and_then(EnemyTrack::last_queued_attack_as_request);
     }
     pub fn update_latest_nonpast(&mut self) {
-        let curr_tick = self.current_tick();
+        let curr_tick = self.time_now_frames();
         for value in self.tracks.values_mut() {
             value.update_latest_nonpast(curr_tick);
         }
@@ -105,7 +105,7 @@ impl Solver {
     }
     fn is_valid_lead(&self) -> bool {
         self.get_lead_track()
-            .is_none_or(|v| v.is_actionable_now(self.current_tick()))
+            .is_none_or(|v| v.is_actionable_now(self.time_now_frames(), self.time_now_frames()))
     }
     fn solve_request(
         &mut self,
@@ -120,7 +120,12 @@ impl Solver {
                 .tracks
                 .iter()
                 .filter(|(index, _)| self.lead_track_id.is_none_or(|i| !i.eq(*index)))
-                .map(|(index, track)| (index, track.possible_future_commits(&mut request)))
+                .map(|(index, track)| {
+                    (
+                        index,
+                        track.possible_future_commits(&mut request, self.time_now_frames()),
+                    )
+                })
                 .filter(|(_, b)| !b.is_empty())
                 .collect::<Vec<_>>();
 

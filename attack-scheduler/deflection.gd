@@ -10,7 +10,7 @@ signal active_end();
 func _ready() -> void:
 	self.active_timer.timeout.connect(self.active_end.emit);
 
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	for key in buttons.keys():
 		if Input.is_action_just_pressed(key):
 			self.try_parry(key);

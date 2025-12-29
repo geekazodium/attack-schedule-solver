@@ -45,7 +45,7 @@ mod tests {
             Attack::new_expect(80, vec![38], vec![20, 30, 60]),
         ]);
 
-        assert!(lead_track.commit_by_index(2, 2));
+        assert!(lead_track.commit_by_index(2, 2, 0));
 
         let mut solver = Solver::new();
         let lead_key = NonZeroI64::new(i64::MAX).unwrap();
@@ -85,7 +85,7 @@ mod tests {
             Attack::new_expect(80, vec![38], vec![20, 30, 60]),
         ]);
 
-        assert!(lead_track.commit_by_index(2, 2));
+        assert!(lead_track.commit_by_index(2, 2, 0));
 
         let mut solver = Solver::new();
         let lead_key = NonZeroI64::new(i64::MAX).unwrap();
@@ -105,7 +105,7 @@ mod tests {
         }
 
         for now in 0..120 {
-            solver.get_track_mut(lead_key).commit_by_index(2, now);
+            solver.get_track_mut(lead_key).commit_by_index(2, now, now);
             // solver.try_create_new_request();
             let _ = solver.solve(&mut random);
             solver.tick();

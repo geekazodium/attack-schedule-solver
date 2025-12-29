@@ -36,6 +36,7 @@ impl EnemyTrack {
         &self,
         request: &ComplementAttackRequest,
         request_frame: u64,
+        time_now: u64,
     ) -> impl Iterator<Item = &EnemyTrackAttack> {
         self.attacks
             .iter()
@@ -45,7 +46,7 @@ impl EnemyTrack {
                 AttackFutureInstance::try_create(
                     attack,
                     request_frame,
-                    self.first_actionable_frame(),
+                    self.first_actionable_frame(time_now),
                 )
             })
             .filter(|future_instance| future_instance.can_meet_request_followup(request))
@@ -55,24 +56,24 @@ impl EnemyTrack {
         self.future_stack.first()
     }
     pub fn update_latest_nonpast(&mut self, time: u64) {
-        let mut i = 0;
-        while let Some(zeroth) = self.future_stack.get(i) {
+        if let Some(zeroth) = self.future_stack.first() {
             if zeroth.get_end_frame(self) > time {
-                break;
+                return;
             }
-            i += 1;
+        } else {
+            return;
         }
-
-        self.future_stack.rotate_left(i);
-        for _ in 0..i {
-            self.future_stack.pop();
-        }
+        self.future_stack.remove(0);
     }
     #[must_use]
-    pub fn possible_now_commits(&self, request: &ComplementAttackRequest) -> Vec<FutureMoveCommit> {
+    pub fn possible_now_commits(
+        &self,
+        request: &ComplementAttackRequest,
+        time_now: u64,
+    ) -> Vec<FutureMoveCommit> {
         if let Some(request_frame) = request.first_req_frame() {
-            self.possible_now_moves_iter(request, request_frame)
-                .filter_map(|attack| self.create_future_move(request_frame, attack))
+            self.possible_now_moves_iter(request, request_frame, time_now)
+                .filter_map(|attack| self.create_future_move(request_frame, attack, time_now))
                 .collect()
         } else {
             vec![]
@@ -83,11 +84,12 @@ impl EnemyTrack {
     pub fn possible_future_commits(
         &self,
         request: &mut ComplementAttackRequest,
+        time_now: u64,
     ) -> Vec<FutureMoveCommit> {
-        let mut collection = self.possible_now_commits(request);
+        let mut collection = self.possible_now_commits(request, time_now);
         let restore = request.get_restore_point();
         while request.skip() {
-            let mut skipped_add = self.possible_now_commits(request);
+            let mut skipped_add = self.possible_now_commits(request, time_now);
             collection.append(&mut skipped_add);
         }
         request.restore(&restore);
@@ -105,14 +107,19 @@ impl EnemyTrack {
         })
     }
     #[must_use]
-    pub fn first_actionable_frame(&self) -> u64 {
+    pub fn first_actionable_frame(&self, time_now: u64) -> u64 {
         match self.last_future_stack_item() {
             Some(commit) => commit.get_end_frame(self),
-            None => 0,
+            None => time_now,
         }
     }
-    fn get_attack_frame(&self, attack_index: usize, request_frame: u64) -> Option<u64> {
-        let first_actionable = self.first_actionable_frame();
+    fn get_attack_frame(
+        &self,
+        attack_index: usize,
+        request_frame: u64,
+        time_now: u64,
+    ) -> Option<u64> {
+        let first_actionable = self.first_actionable_frame(time_now);
         self.attacks[attack_index]
             .get_attack()
             .get_start_frame(request_frame, first_actionable)
@@ -121,9 +128,10 @@ impl EnemyTrack {
         &self,
         start_frame: u64,
         attack: &EnemyTrackAttack,
+        time_now: u64,
     ) -> Option<FutureMoveCommit> {
         let attack_index = attack.get_index();
-        if let Some(attack_frame) = self.get_attack_frame(attack_index, start_frame) {
+        if let Some(attack_frame) = self.get_attack_frame(attack_index, start_frame, time_now) {
             let commit = FutureMoveCommit::new(attack_index, attack_frame);
             return Some(commit);
         }
@@ -134,16 +142,16 @@ impl EnemyTrack {
         request.apply_commit_claim(self, &commit, false);
         self.future_stack.push(commit);
     }
-    pub fn commit_by_index(&mut self, attack_index: usize, start_time: u64) -> bool {
-        if !self.is_actionable_now(start_time) {
+    pub fn is_actionable_now(&self, start_time: u64, time_now: u64) -> bool {
+        self.first_actionable_frame(time_now) <= start_time
+    }
+    pub fn commit_by_index(&mut self, attack_index: usize, start_time: u64, time_now: u64) -> bool {
+        if !self.is_actionable_now(start_time, time_now) {
             return false;
         }
         let commit = FutureMoveCommit::new(attack_index, start_time);
         self.future_stack.push(commit);
         true
-    }
-    pub fn is_actionable_now(&self, start_time: u64) -> bool {
-        self.first_actionable_frame() <= start_time
     }
 }
 
@@ -169,7 +177,7 @@ mod enemy_track_tests {
             request: &ComplementAttackRequest,
         ) -> Vec<&EnemyTrackAttack> {
             if let Some(request_frame) = request.first_req_frame() {
-                self.possible_now_moves_iter(request, request_frame)
+                self.possible_now_moves_iter(request, request_frame, 0)
                     .collect()
             } else {
                 vec![]
@@ -193,7 +201,7 @@ mod enemy_track_tests {
         expected_len: usize,
         expected_next_unclaimed: bool,
     ) {
-        let mut commits = track.possible_now_commits(&request);
+        let mut commits = track.possible_now_commits(&request, 0);
         assert_eq!(commits.len(), expected_len);
         track.commit(request, commits.swap_remove(take_option_index));
         assert_eq!(request.next_unclaimed(), expected_next_unclaimed);
@@ -204,7 +212,7 @@ mod enemy_track_tests {
         track: &EnemyTrack,
         expected_len: usize,
     ) {
-        let commits = track.possible_now_commits(request);
+        let commits = track.possible_now_commits(request, 0);
         assert_eq!(commits.len(), expected_len);
     }
 
@@ -304,7 +312,7 @@ mod enemy_track_tests {
         let mock_lead_track = Attack::new_expect(25, vec![], vec![10, 18]);
         let mut mock_request: ComplementAttackRequest = mock_lead_track.into();
 
-        let can_meet = mock_track.possible_future_commits(&mut mock_request);
+        let can_meet = mock_track.possible_future_commits(&mut mock_request, 0);
         dbg!(&can_meet);
         assert_eq!(can_meet.len(), 3);
     }

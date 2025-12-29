@@ -69,7 +69,7 @@ impl SolverInterface {
 
 impl SolverInterface {
     pub fn time_now(&self) -> u64 {
-        self.solver.current_tick()
+        self.solver.time_now_frames()
     }
     pub fn commit_move_now(&mut self, id: NonZeroI64, index: usize) {
         let time_now = self.time_now();
@@ -79,7 +79,7 @@ impl SolverInterface {
         if self
             .solver
             .get_track_mut(id)
-            .commit_by_index(index, time_now)
+            .commit_by_index(index, time_now, time_now)
         {
             self.solver.change_lead(id);
             godot_print!("sucess committed move");

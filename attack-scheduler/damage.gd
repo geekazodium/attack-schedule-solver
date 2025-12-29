@@ -9,7 +9,7 @@ func _ready() -> void:
 	$ProgressBar.max_value = self.max_health;
 	$ProgressBar.value = self.current_health;
 
-func on_area_entered(area: Area2D) -> void:
+func on_area_entered(_area: Area2D) -> void:
 	self.current_health -= 1;
 	$ProgressBar.value = self.current_health;
 	if self.current_health <= 0:
