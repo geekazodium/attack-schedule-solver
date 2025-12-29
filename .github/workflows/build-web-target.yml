@@ -85,6 +85,23 @@ jobs:
         rustup component add rust-src --toolchain nightly
         rustup target add wasm32-unknown-emscripten --toolchain nightly
 
+    - name: check rust cache
+      id: rust-deps-check
+      uses: actions/cache@v4
+      env: 
+        cache-name: "rust dependencies"
+      with:
+        path: |
+          ${{env.RUST_DIR}}/target/
+          ${{env.RUST_DIR}}/Cargo.lock
+        key: ${{ runner.os }}-build-rust-release-wasm32
+        lookup-only: true
+
+    - if: ${{steps.rust-deps-check.outputs.cache-hit == 'true'}}
+      name: remove_current_cargo_lock
+      run: | 
+        rm ${{env.RUST_DIR}}/Cargo.lock
+
     - name: caches rust directory
       id: cache-rust-deps-release
       uses: actions/cache@v4
