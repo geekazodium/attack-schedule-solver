@@ -1,6 +1,7 @@
 use self::complement_attack_request::ComplementAttackRequest;
 use self::enemy_track_attack_wrapper::EnemyTrackAttack;
 use crate::attack::Attack;
+use crate::enemy_track::complement_attack_request::request_offset::RequestOffset;
 use crate::enemy_track::future_move_commit::FutureMoveCommit;
 use std::ops::RangeFrom;
 
@@ -33,6 +34,7 @@ impl EnemyTrack {
     fn possible_now_moves_iter(
         &self,
         request: &ComplementAttackRequest,
+        offset: &RequestOffset,
         request_frame: u64,
         time_now: u64,
     ) -> impl Iterator<Item = FutureMoveCommit> {
@@ -58,7 +60,9 @@ impl EnemyTrack {
                     )
                 })
             })
-            .filter(|future_instance| future_instance.can_meet_request_followup(self, request))
+            .filter(|future_instance| {
+                future_instance.can_meet_request_followup(self, request, offset)
+            })
     }
     pub fn get_attack(&self, index: usize) -> &Attack {
         self.attacks[index].get_attack()
@@ -80,29 +84,28 @@ impl EnemyTrack {
     pub fn possible_now_commits(
         &self,
         request: &ComplementAttackRequest,
+        offset: &RequestOffset,
         time_now: u64,
     ) -> Vec<FutureMoveCommit> {
-        if let Some(request_frame) = request.first_req_frame() {
-            self.possible_now_moves_iter(request, request_frame, time_now)
+        if let Some(request_frame) = request.first_req_frame(offset) {
+            self.possible_now_moves_iter(request, offset, request_frame, time_now)
                 .collect()
         } else {
             vec![]
         }
     }
-    //FIXME: bad mutability practice, request should never be changed here, so it should be immutable
-    //however, need to move it forwards and then revert to avoid issues.
     pub fn possible_future_commits(
         &self,
-        request: &mut ComplementAttackRequest,
+        request: &ComplementAttackRequest,
         time_now: u64,
     ) -> Vec<FutureMoveCommit> {
-        let mut collection = self.possible_now_commits(request, time_now);
-        let restore = request.get_restore_point();
-        while request.skip() {
-            let mut skipped_add = self.possible_now_commits(request, time_now);
+        let mut offset = RequestOffset::new_default();
+        let mut collection = self.possible_now_commits(request, &offset, time_now);
+        while let Some(tmp) = request.skip(offset) {
+            offset = tmp;
+            let mut skipped_add = self.possible_now_commits(request, &offset, time_now);
             collection.append(&mut skipped_add);
         }
-        request.restore(&restore);
         collection
     }
     fn last_future_stack_item(&self) -> Option<&FutureMoveCommit> {
@@ -125,7 +128,7 @@ impl EnemyTrack {
     }
     //FIXME: in future, make sure commits are checked to be valid before allowing
     pub fn commit(&mut self, request: &mut ComplementAttackRequest, commit: FutureMoveCommit) {
-        request.apply_commit_claim(self, &commit, false);
+        request.apply_commit_claim(self, &commit);
         self.future_stack.push(commit);
     }
     pub fn is_actionable_now(&self, start_time: u64, time_now: u64) -> bool {
@@ -166,37 +169,39 @@ mod enemy_track_tests {
         pub fn possible_now_moves(
             &self,
             request: &ComplementAttackRequest,
+            offset: &RequestOffset,
         ) -> Vec<&EnemyTrackAttack> {
-            if let Some(request_frame) = request.first_req_frame() {
-                self.possible_now_moves_iter(request, request_frame, 0)
+            if let Some(request_frame) = request.first_req_frame(offset) {
+                self.possible_now_moves_iter(request, offset, request_frame, 0)
                     .map(|commit| &self.attacks[commit.get_index()])
                     .collect()
             } else {
                 vec![]
             }
         }
-        //uncommit move
-        pub fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
-            if let Some(commit) = self.future_stack.pop() {
-                request.apply_commit_claim(self, &commit, true);
+        // //uncommit move
+        // pub fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
+        //     if let Some(commit) = self.future_stack.pop() {
+        //         request.apply_commit_claim(self, &commit, true);
 
-                return true;
-            }
-            false
-        }
+        //         return true;
+        //     }
+        //     false
+        // }
     }
 
     fn commit_and_assert(
         request: &mut ComplementAttackRequest,
+        offset: &mut RequestOffset,
         track: &mut EnemyTrack,
         take_option_index: usize,
         expected_len: usize,
         expected_next_unclaimed: bool,
     ) {
-        let mut commits = track.possible_now_commits(&request, 0);
+        let mut commits = track.possible_now_commits(&request, &offset, 0);
         assert_eq!(commits.len(), expected_len);
         track.commit(request, commits.swap_remove(take_option_index));
-        assert_eq!(request.next_unclaimed(), expected_next_unclaimed);
+        assert_eq!(request.next_unclaimed(offset), expected_next_unclaimed);
     }
 
     fn assert_commits_length(
@@ -204,7 +209,7 @@ mod enemy_track_tests {
         track: &EnemyTrack,
         expected_len: usize,
     ) {
-        let commits = track.possible_now_commits(request, 0);
+        let commits = track.possible_now_commits(request, &RequestOffset::new_default(), 0);
         assert_eq!(commits.len(), expected_len);
     }
 
@@ -220,19 +225,18 @@ mod enemy_track_tests {
         assert_commits_length(&mock_request, &mock_track, 2);
     }
 
-    #[test]
-    fn commit_and_uncommit_test() {
-        let mut mock_track = EnemyTrack::new(vec![
-            Attack::new_expect(18, vec![8, 16], vec![2]),
-            Attack::new_expect(20, vec![8, 10, 16], vec![4]),
-        ]);
-        let mock_lead_action = Attack::new_expect(30, vec![], vec![16, 24]);
-        let mut mock_request = mock_lead_action.into();
+    // #[test]
+    // fn commit_and_uncommit_test() {
+    //     let mut mock_track = EnemyTrack::new(vec![
+    //         Attack::new_expect(18, vec![8, 16], vec![2]),
+    //         Attack::new_expect(20, vec![8, 10, 16], vec![4]),
+    //     ]);
+    //     let mock_lead_action = Attack::new_expect(30, vec![], vec![16, 24]);
+    //     let mut mock_request = mock_lead_action.into();
 
-        commit_and_assert(&mut mock_request, &mut mock_track, 0, 1, false);
+    //     commit_and_assert(&mut mock_request, &mut mock_track, 0, 1, false);
 
-        assert!(mock_track.uncommit(&mut mock_request));
-    }
+    // }
 
     #[test]
     fn fail_meet_request_test() {
@@ -244,7 +248,7 @@ mod enemy_track_tests {
         let mock_lead_action = Attack::new_expect(40, vec![10, 16], vec![13, 29]);
         assert!(
             mock_track
-                .possible_now_moves(&mock_lead_action.into())
+                .possible_now_moves(&mock_lead_action.into(), &RequestOffset::new_default())
                 .is_empty()
         );
     }
@@ -259,39 +263,42 @@ mod enemy_track_tests {
         let src = Attack::new_expect(30, vec![], vec![20, 28]);
         let mut mock_request: ComplementAttackRequest = src.into();
 
-        commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
-        commit_and_assert(&mut mock_request, &mut mock_track, 0, 1, false);
+        let mut offset: RequestOffset = RequestOffset::new_default();
+        commit_and_assert(&mut mock_request, &mut offset, &mut mock_track, 1, 2, true);
+        commit_and_assert(&mut mock_request, &mut offset, &mut mock_track, 0, 1, false);
     }
 
-    #[test]
-    fn can_deny_inapplicable_request() {
-        let mut mock_track = EnemyTrack::new(vec![
-            Attack::new_expect(10, vec![1, 9], vec![]),
-            Attack::new_expect(6, vec![5], vec![]),
-            Attack::new_expect(13, vec![2, 4, 6], vec![]),
-        ]);
+    // rearchitecture required: probable best plan as of now:
+    // don't use uncommit, recreate the state if something is removed.
+    // #[test]
+    // fn can_deny_inapplicable_request() {
+    //     let mut mock_track = EnemyTrack::new(vec![
+    //         Attack::new_expect(10, vec![1, 9], vec![]),
+    //         Attack::new_expect(6, vec![5], vec![]),
+    //         Attack::new_expect(13, vec![2, 4, 6], vec![]),
+    //     ]);
 
-        let src = Attack::new_expect(25, vec![], vec![10, 18]);
-        let mut mock_request: ComplementAttackRequest = src.into();
+    //     let src = Attack::new_expect(25, vec![], vec![10, 18]);
+    //     let mut mock_request: ComplementAttackRequest = src.into();
 
-        let restore_point_a = mock_request.get_restore_point();
-        commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
+    //     let restore_point_a = mock_request.get_restore_point();
+    //     commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
 
-        let restore_point_b = mock_request.get_restore_point();
+    //     let restore_point_b = mock_request.get_restore_point();
 
-        commit_and_assert(&mut mock_request, &mut mock_track, 0, 2, false);
+    //     commit_and_assert(&mut mock_request, &mut mock_track, 0, 2, false);
 
-        mock_track.uncommit(&mut mock_request);
-        mock_request.restore(&restore_point_b);
+    //     mock_track.uncommit(&mut mock_request);
+    //     mock_request.restore(&restore_point_b);
 
-        commit_and_assert(&mut mock_request, &mut mock_track, 0, 2, false);
+    //     commit_and_assert(&mut mock_request, &mut mock_track, 0, 2, false);
 
-        assert!(mock_track.uncommit(&mut mock_request));
-        mock_request.restore(&restore_point_b);
-        assert!(mock_track.uncommit(&mut mock_request));
-        mock_request.restore(&restore_point_a);
-        dbg!(&mock_request);
-    }
+    //     assert!(mock_track.uncommit(&mut mock_request));
+    //     mock_request.restore(&restore_point_b);
+    //     assert!(mock_track.uncommit(&mut mock_request));
+    //     mock_request.restore(&restore_point_a);
+    //     dbg!(&mock_request);
+    // }
 
     #[test]
     fn can_match_all_futures() {

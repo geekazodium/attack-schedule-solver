@@ -58,7 +58,7 @@ impl Attack {
     }
     pub fn to_request(&self, start: u64) -> Option<ComplementAttackRequest> {
         ComplementAttackRequest::new(
-            self.active_request_frames().clone(),
+            self.active_request_frames(),
             self.get_full_duration(),
             start,
         )

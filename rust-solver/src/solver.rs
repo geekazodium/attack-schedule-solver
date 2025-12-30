@@ -1,5 +1,6 @@
 use crate::enemy_track::EnemyTrack;
 use crate::enemy_track::complement_attack_request::ComplementAttackRequest;
+use crate::enemy_track::complement_attack_request::request_offset::RequestOffset;
 use std::collections::HashMap;
 use std::num::NonZeroI64;
 
@@ -113,7 +114,10 @@ impl Solver {
         random: &mut impl SolverRandomState,
     ) -> ComplementAttackRequest {
         loop {
-            if request.first_req_frame().is_none() {
+            if request
+                .first_req_frame(&RequestOffset::new_default())
+                .is_none()
+            {
                 break;
             }
             let mut possible_commits = self
@@ -123,7 +127,7 @@ impl Solver {
                 .map(|(index, track)| {
                     (
                         index,
-                        track.possible_future_commits(&mut request, self.time_now_frames()),
+                        track.possible_future_commits(&request, self.time_now_frames()),
                     )
                 })
                 .filter(|(_, b)| !b.is_empty())

@@ -1,5 +1,7 @@
 use super::EnemyTrack;
-use crate::enemy_track::complement_attack_request::ComplementAttackRequest;
+use crate::enemy_track::complement_attack_request::{
+    ComplementAttackRequest, request_offset::RequestOffset,
+};
 
 #[derive(Debug)]
 pub struct FutureMoveCommit {
@@ -69,8 +71,9 @@ impl FutureMoveCommit {
         &self,
         parent_track: &EnemyTrack,
         request: &ComplementAttackRequest,
+        offset: &RequestOffset,
     ) -> bool {
-        let mut request_iter = request.iter_skip_start();
+        let mut request_iter = request.iter_skip_start(offset);
         let active_frames_iter = self.active_frame_times(parent_track);
         for active in active_frames_iter.skip(1) {
             //if outside of current attack's claim, definitely done.
