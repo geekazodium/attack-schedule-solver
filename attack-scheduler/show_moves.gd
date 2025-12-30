@@ -79,10 +79,3 @@ func update_current_move() -> void:
 			self.active_frame_start.emit();
 			var parry_dir: int = self.current_move.parry_directions[index];
 			self.instantiate_parry(parry_dir);
-	return;
-	if !self.attack_track.is_current_lead():
-		return;
-	index = self.current_move.requests.bsearch(self.current_move_frame);
-	if self.current_move.requests.size() > index:
-		if self.current_move.requests[index] == self.current_move_frame:
-			self.instantiate_no_collide(Color(.2,1,.2,.3)).scale.x *= 2;

@@ -46,8 +46,8 @@ impl Attack {
     pub fn get_start_frame(&self, request_frame: u64, first_actionable: u64) -> Option<u64> {
         self.active
             .first()
-            .filter(|first_active| **first_active + first_actionable <= request_frame)
-            .map(|x| request_frame - x)
+            .and_then(|x| request_frame.checked_sub(*x))
+            .filter(|start_frame| first_actionable.le(start_frame))
     }
     #[must_use]
     pub fn active_request_frames(&self) -> &Vec<u64> {
@@ -72,7 +72,7 @@ mod attack_tests {
     #[test]
     fn start_frame_valid() {
         let a = Attack::new_expect(10, vec![8], vec![4]);
-        assert_eq!(a.get_start_frame(15, 0), Some(7));
+        assert_eq!(a.get_start_frame(15, 2), Some(7));
     }
 
     #[test]

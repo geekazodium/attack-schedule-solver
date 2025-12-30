@@ -31,6 +31,12 @@ impl EnemyTrack {
             future_stack: vec![],
         }
     }
+    fn valid_attacks(&self) -> impl Iterator<Item = &EnemyTrackAttack> {
+        self.attacks
+            .iter()
+            .zip(&self.attacks_validitiy)
+            .filter_map(|(attack, valid)| if *valid { Some(attack) } else { None })
+    }
     fn possible_now_moves_iter(
         &self,
         request: &ComplementAttackRequest,
@@ -39,26 +45,11 @@ impl EnemyTrack {
         time_now: u64,
     ) -> impl Iterator<Item = FutureMoveCommit> {
         let first_actionable = self.first_actionable_frame(time_now);
-        self.attacks
-            .iter()
-            .zip(&self.attacks_validitiy)
-            .filter_map(move |(attack, valid)| if *valid { Some(attack) } else { None })
-            .map(move |attack| {
-                (
-                    attack,
-                    attack
-                        .get_attack()
-                        .get_start_frame(request_frame, first_actionable),
-                )
-            })
+
+        self.valid_attacks()
+            .filter_map(move |attack| attack.start_frame_and_index(request_frame, first_actionable))
             .filter_map(move |(attack, start_frame)| {
-                start_frame.and_then(|start_frame| {
-                    FutureMoveCommit::try_create(
-                        attack.get_index(),
-                        start_frame,
-                        self.first_actionable_frame(time_now),
-                    )
-                })
+                FutureMoveCommit::try_create(attack, start_frame, first_actionable)
             })
             .filter(|future_instance| {
                 future_instance.can_meet_request_followup(self, request, offset)
@@ -179,15 +170,6 @@ mod enemy_track_tests {
                 vec![]
             }
         }
-        // //uncommit move
-        // pub fn uncommit(&mut self, request: &mut ComplementAttackRequest) -> bool {
-        //     if let Some(commit) = self.future_stack.pop() {
-        //         request.apply_commit_claim(self, &commit, true);
-
-        //         return true;
-        //     }
-        //     false
-        // }
     }
 
     fn commit_and_assert(
@@ -224,19 +206,6 @@ mod enemy_track_tests {
             Attack::new_expect(30, vec![], vec![20, 28]).into();
         assert_commits_length(&mock_request, &mock_track, 2);
     }
-
-    // #[test]
-    // fn commit_and_uncommit_test() {
-    //     let mut mock_track = EnemyTrack::new(vec![
-    //         Attack::new_expect(18, vec![8, 16], vec![2]),
-    //         Attack::new_expect(20, vec![8, 10, 16], vec![4]),
-    //     ]);
-    //     let mock_lead_action = Attack::new_expect(30, vec![], vec![16, 24]);
-    //     let mut mock_request = mock_lead_action.into();
-
-    //     commit_and_assert(&mut mock_request, &mut mock_track, 0, 1, false);
-
-    // }
 
     #[test]
     fn fail_meet_request_test() {

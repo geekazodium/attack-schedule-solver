@@ -52,7 +52,7 @@ mod tests {
         solver.add_track(lead_key, lead_track);
         solver.change_lead(lead_key);
 
-        for count in 0..2 {
+        for count in 0..1000 {
             solver.add_track(
                 NonZeroI64::new(count + 1).unwrap(),
                 EnemyTrack::new(vec![
@@ -73,7 +73,7 @@ mod tests {
         assert!(elapsed < Duration::from_millis(8));
         // dbg!(&solver);
         dbg!(request);
-        dbg!(solver);
+        // dbg!(solver);
     }
 
     #[test]
