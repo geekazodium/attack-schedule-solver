@@ -24,19 +24,6 @@ impl FutureMoveCommit {
         }
         Some(unsafe { Self::new_unchecked(attack_index, start_frame) })
     }
-    // pub fn try_create(
-    //     track: &EnemyTrack,
-    //     attack_index: usize,
-    //     request_frame: u64,
-    //     first_actionable: u64
-    // ) -> Option<Self> {
-    //     let attack = track.get_attack(attack_index);
-    //     let attack_index = attack.get_index();
-    //     attack
-    //         .get_attack()
-    //         .get_start_frame(request_frame, first_actionable)
-    //         .map(|start_frame| unsafe { Self::new_unchecked(attack_index, start_frame) })
-    // }
     pub fn get_start_frame(&self) -> u64 {
         // godot_print!("frames after now: {}", self.frames_after_now);
         self.start_frame
@@ -47,13 +34,21 @@ impl FutureMoveCommit {
     ) -> impl 'a + Iterator<Item = u64> {
         parent_track
             .get_attack(self.get_index())
-            .get_attack()
             .get_active_frames(self.start_frame)
+    }
+    pub fn get_request_frames<'a>(
+        &'a self,
+        parent_track: &'a EnemyTrack,
+    ) -> impl 'a + Iterator<Item = u64> {
+        parent_track
+            .get_attack(self.get_index())
+            .active_request_frames()
+            .iter()
+            .map(move |v| v + self.get_start_frame())
     }
     fn get_full_duration(&self, parent_track: &EnemyTrack) -> u64 {
         parent_track
             .get_attack(self.get_index())
-            .get_attack()
             .get_full_duration()
     }
     pub fn get_end_frame(&self, parent_track: &EnemyTrack) -> u64 {
@@ -68,7 +63,6 @@ impl FutureMoveCommit {
     ) -> impl Iterator<Item = u64> {
         parent_track
             .get_attack(self.get_index())
-            .get_attack()
             .get_active_frames(self.start_frame)
     }
     pub(super) fn can_meet_request_followup(

@@ -60,8 +60,8 @@ impl EnemyTrack {
             })
             .filter(|future_instance| future_instance.can_meet_request_followup(self, request))
     }
-    pub fn get_attack(&self, index: usize) -> &EnemyTrackAttack {
-        &self.attacks[index]
+    pub fn get_attack(&self, index: usize) -> &Attack {
+        self.attacks[index].get_attack()
     }
     pub fn latest_nonpast_commit(&self) -> Option<&FutureMoveCommit> {
         self.future_stack.first()
@@ -108,14 +108,13 @@ impl EnemyTrack {
     fn last_future_stack_item(&self) -> Option<&FutureMoveCommit> {
         self.future_stack.last()
     }
-    pub fn last_queued_attack_as_request(&self) -> Option<ComplementAttackRequest> {
-        self.last_future_stack_item().and_then(|commit| {
-            self.get_attack_from_commit(commit)
-                .to_request(commit.get_start_frame())
-        })
+    fn get_commit_as_request(&self, commit: &FutureMoveCommit) -> Option<ComplementAttackRequest> {
+        self.get_attack(commit.get_index())
+            .to_request(commit.get_start_frame())
     }
-    fn get_attack_from_commit(&self, commit: &FutureMoveCommit) -> &Attack {
-        self.get_attack(commit.get_index()).get_attack()
+    pub fn last_queued_attack_as_request(&self) -> Option<ComplementAttackRequest> {
+        self.last_future_stack_item()
+            .and_then(|commit| self.get_commit_as_request(commit))
     }
     #[must_use]
     pub fn first_actionable_frame(&self, time_now: u64) -> u64 {
@@ -170,7 +169,7 @@ mod enemy_track_tests {
         ) -> Vec<&EnemyTrackAttack> {
             if let Some(request_frame) = request.first_req_frame() {
                 self.possible_now_moves_iter(request, request_frame, 0)
-                    .map(|commit| self.get_attack(commit.get_index()))
+                    .map(|commit| &self.attacks[commit.get_index()])
                     .collect()
             } else {
                 vec![]

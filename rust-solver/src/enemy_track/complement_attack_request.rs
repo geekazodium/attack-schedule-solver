@@ -9,7 +9,6 @@ pub struct ComplementAttackRequest {
     taken_requests: Vec<bool>,
     request_offset: usize,
     request_source_claim_end: u64,
-    request_start_frame: u64,
 }
 
 impl ComplementAttackRequest {
@@ -20,9 +19,8 @@ impl ComplementAttackRequest {
             Some(Self {
                 request_offset: 0,
                 taken_requests: vec.iter().map(|_| false).collect(),
-                request_frames: vec,
-                request_source_claim_end,
-                request_start_frame: start_frame,
+                request_frames: vec.iter().map(|x| x + start_frame).collect(),
+                request_source_claim_end: request_source_claim_end + start_frame,
             })
         }
     }
@@ -30,9 +28,7 @@ impl ComplementAttackRequest {
         if self.taken_requests[self.request_offset] {
             return None;
         }
-        self.request_frames
-            .get(self.request_offset)
-            .map(|frame| frame + self.request_start_frame)
+        self.request_frames.get(self.request_offset).copied()
     }
     pub(crate) fn iter_skip_start(&'_ self) -> impl Iterator<Item = u64> {
         self.request_frames
@@ -40,10 +36,10 @@ impl ComplementAttackRequest {
             .zip(&self.taken_requests)
             .skip(self.request_offset + 1)
             .filter_map(|(req, taken)| if *taken { None } else { Some(req) })
-            .map(|req| req + self.request_start_frame)
+            .copied()
     }
     pub(crate) fn claim_end_time(&self) -> u64 {
-        self.request_source_claim_end + self.request_start_frame
+        self.request_source_claim_end
     }
     #[must_use]
     pub fn get_restore_point(&self) -> RequestRestorePoint {
@@ -83,18 +79,52 @@ impl ComplementAttackRequest {
     ) {
         let mut index = if undo { 0 } else { self.request_offset };
         for active in commit.get_active_frames(track) {
-            // dbg!(&self);
             if active >= self.claim_end_time() {
-                return;
+                break;
             }
             while index < self.request_frames.len() {
-                if self.request_frames[index] + self.request_start_frame == active {
+                if self.request_frames[index] == active {
                     self.taken_requests[index] = !undo;
                     break;
                 }
                 index += 1;
             }
         }
+        let mut index = self.request_offset;
+        while self
+            .request_frames
+            .get(index)
+            .is_some_and(|v| commit.get_start_frame().gt(v))
+        {
+            index += 1;
+        }
+        let get_end_frame = commit.get_end_frame(track);
+        for other_request_frame in commit.get_request_frames(track) {
+            if other_request_frame >= self.claim_end_time() {
+                self.request_frames.push(other_request_frame);
+                self.taken_requests.push(false);
+                continue;
+            }
+
+            while index < self.request_frames.len() {
+                if self.request_frames[index] >= get_end_frame {
+                    break;
+                }
+                if self.request_frames[index] == other_request_frame {
+                    break;
+                }
+                self.taken_requests[index] = true;
+                index += 1;
+            }
+        }
+        while index < self.request_frames.len() {
+            if self.request_frames[index] >= get_end_frame {
+                break;
+            }
+            self.taken_requests[index] = true;
+            index += 1;
+        }
+        self.request_source_claim_end = u64::max(get_end_frame, self.request_source_claim_end);
     }
 }
 
