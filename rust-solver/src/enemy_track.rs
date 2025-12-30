@@ -268,38 +268,6 @@ mod enemy_track_tests {
         commit_and_assert(&mut mock_request, &mut offset, &mut mock_track, 0, 1, false);
     }
 
-    // rearchitecture required: probable best plan as of now:
-    // don't use uncommit, recreate the state if something is removed.
-    // #[test]
-    // fn can_deny_inapplicable_request() {
-    //     let mut mock_track = EnemyTrack::new(vec![
-    //         Attack::new_expect(10, vec![1, 9], vec![]),
-    //         Attack::new_expect(6, vec![5], vec![]),
-    //         Attack::new_expect(13, vec![2, 4, 6], vec![]),
-    //     ]);
-
-    //     let src = Attack::new_expect(25, vec![], vec![10, 18]);
-    //     let mut mock_request: ComplementAttackRequest = src.into();
-
-    //     let restore_point_a = mock_request.get_restore_point();
-    //     commit_and_assert(&mut mock_request, &mut mock_track, 1, 2, true);
-
-    //     let restore_point_b = mock_request.get_restore_point();
-
-    //     commit_and_assert(&mut mock_request, &mut mock_track, 0, 2, false);
-
-    //     mock_track.uncommit(&mut mock_request);
-    //     mock_request.restore(&restore_point_b);
-
-    //     commit_and_assert(&mut mock_request, &mut mock_track, 0, 2, false);
-
-    //     assert!(mock_track.uncommit(&mut mock_request));
-    //     mock_request.restore(&restore_point_b);
-    //     assert!(mock_track.uncommit(&mut mock_request));
-    //     mock_request.restore(&restore_point_a);
-    //     dbg!(&mock_request);
-    // }
-
     #[test]
     fn can_match_all_futures() {
         let mock_track = EnemyTrack::new(vec![

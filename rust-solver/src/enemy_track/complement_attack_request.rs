@@ -168,28 +168,6 @@ mod complement_attack_request_tests {
         );
     }
 
-    // #[test]
-    // fn test_restore() {
-    //     let mut offset = RequestOffset::new_default();
-    //     let mut req = ComplementAttackRequest::new(vec![20, 32, 40, 90], 100, 0).unwrap();
-    //     req.taken_requests[2] = true;
-    //     req.taken_requests[0] = true;
-
-    //     let restore = req.get_restore_point();
-    //     assert!(req.skip());
-    //     assert_eq!(req.iter_skip_start().collect::<Vec<u64>>(), vec![90]);
-
-    //     req.taken_requests[2] = false;
-
-    //     assert_eq!(req.iter_skip_start().collect::<Vec<u64>>(), vec![40, 90]);
-    //     req.restore(&restore);
-
-    //     assert_eq!(
-    //         req.iter_skip_start().collect::<Vec<u64>>(),
-    //         vec![32, 40, 90]
-    //     );
-    // }
-
     #[test]
     fn test_offset() {
         let mut offset = RequestOffset::new_default();

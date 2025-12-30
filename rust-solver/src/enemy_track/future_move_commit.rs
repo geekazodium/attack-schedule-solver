@@ -1,7 +1,6 @@
 use super::EnemyTrack;
-use crate::enemy_track::complement_attack_request::{
-    ComplementAttackRequest, request_offset::RequestOffset,
-};
+use crate::enemy_track::complement_attack_request::ComplementAttackRequest;
+use crate::enemy_track::complement_attack_request::request_offset::RequestOffset;
 
 #[derive(Debug)]
 pub struct FutureMoveCommit {
