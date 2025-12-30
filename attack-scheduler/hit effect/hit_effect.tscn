@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://d2xeecgyq34sv"]
+
+[ext_resource type="Script" uid="uid://dicmhvkptjfpc" path="res://hit effect/hit_effect.gd" id="1_cfp2t"]
+[ext_resource type="Texture2D" uid="uid://gpowqnde7afr" path="res://icon.svg" id="1_nsb7h"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_nsb7h"]
+blend_mode = 1
+light_mode = 1
+
+[node name="HitEffect" type="Node2D"]
+script = ExtResource("1_cfp2t")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+material = SubResource("CanvasItemMaterial_nsb7h")
+scale = Vector2(1.9062499, 0.92187494)
+texture = ExtResource("1_nsb7h")
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 0.4
+one_shot = true
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://dbmqb5jaq1ajk"]
+[gd_scene load_steps=14 format=3 uid="uid://dbmqb5jaq1ajk"]
 
 [ext_resource type="ExternEnemyTrack" uid="uid://boplywh12t4ks" path="res://moves/test_track_1.tres" id="1_ig7tw"]
 [ext_resource type="ExternEnemyTrack" uid="uid://xd5ssh3iukl2" path="res://moves/test_track_2.tres" id="2_0xm2m"]
@@ -9,6 +9,7 @@
 [ext_resource type="ExternEnemyTrack" uid="uid://bfs5bwm58rt22" path="res://moves/test_track_3.tres" id="6_kek77"]
 [ext_resource type="Script" uid="uid://bernm1mp5eohb" path="res://hit_shapecast.gd" id="7_5vw27"]
 [ext_resource type="Script" uid="uid://rje2exq5ixdp" path="res://damage.gd" id="7_272bh"]
+[ext_resource type="PackedScene" uid="uid://d2xeecgyq34sv" path="res://hit effect/hit_effect.tscn" id="8_4c57u"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_272bh"]
 size = Vector2(1000, 20)
@@ -21,15 +22,15 @@ size = Vector2(1194, 74)
 
 [node name="Main" type="Node2D"]
 
-[node name="initiator" type="Node" parent="." node_paths=PackedStringArray("track", "next_request_timer")]
+[node name="initiator" type="Node" parent="." node_paths=PackedStringArray("tracks", "next_request_timer")]
 process_physics_priority = 1
 script = ExtResource("3_h2yge")
-track = NodePath("../Track1")
+tracks = [NodePath("../Track1"), NodePath("../Track2"), NodePath("../Track3")]
 next_request_timer = NodePath("Timer")
 
 [node name="Timer" type="Timer" parent="initiator"]
 process_callback = 0
-wait_time = 2.0
+wait_time = 0.2
 one_shot = true
 
 [node name="Track1" type="Node2D" parent="."]
@@ -61,6 +62,7 @@ buttons = {
 }
 active_timer = NodePath("ActiveTimer")
 cooldown_timer = NodePath("CooldownTimer")
+effect = ExtResource("8_4c57u")
 
 [node name="ActiveTimer" type="Timer" parent="Deflection"]
 process_callback = 0
@@ -77,26 +79,32 @@ points = PackedVector2Array(1000, 0, -1000, 0)
 
 [node name="Left" type="ShapeCast2D" parent="Deflection"]
 visible = false
+position = Vector2(0, 224)
 enabled = false
 shape = SubResource("RectangleShape2D_272bh")
+target_position = Vector2(0, -200)
 max_results = 1
 collide_with_areas = true
 script = ExtResource("7_5vw27")
 
 [node name="LeftIndicator" type="Line2D" parent="Deflection/Left"]
+position = Vector2(0, -224)
 points = PackedVector2Array(1000, 0, -1000, 0)
 default_color = Color(1, 0, 0, 1)
 
 [node name="Right" type="ShapeCast2D" parent="Deflection"]
 visible = false
+position = Vector2(0, 224)
 enabled = false
 shape = SubResource("RectangleShape2D_5vw27")
+target_position = Vector2(0, -200)
 max_results = 1
 collision_mask = 2
 collide_with_areas = true
 script = ExtResource("7_5vw27")
 
 [node name="RightIndicator" type="Line2D" parent="Deflection/Right"]
+position = Vector2(0, -224)
 points = PackedVector2Array(1000, 0, -1000, 0)
 default_color = Color(0, 0, 1, 1)
 
@@ -108,6 +116,7 @@ script = ExtResource("7_272bh")
 max_health = 15
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Damage"]
+position = Vector2(0, 193)
 shape = SubResource("RectangleShape2D_7mycd")
 
 [node name="ProgressBar" type="ProgressBar" parent="Damage"]

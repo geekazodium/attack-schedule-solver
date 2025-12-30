@@ -5,6 +5,8 @@ extends Node2D
 @export var active_timer: Timer;
 @export var cooldown_timer: Timer;
 
+@export var effect: PackedScene;
+
 signal active_end();
 
 func _ready() -> void:
@@ -27,6 +29,9 @@ func on_area_entered(area: Area2D) -> void:
 		self.stop_active();
 		self.cooldown_timer.stop();
 		area.queue_free();
+		var instance = self.effect.instantiate();
+		self.add_child(instance);
+		instance.global_position.x = area.global_position.x;
 
 func stop_active() -> void:
 	self.active_timer.stop();

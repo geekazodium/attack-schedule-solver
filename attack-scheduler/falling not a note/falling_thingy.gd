@@ -4,5 +4,5 @@ extends Node2D
 
 func _physics_process(delta: float) -> void:
 	self.position += Vector2.DOWN * delta * fall_speed;
-	if self.position.y > 1000:
+	if self.position.y - $Sprite2D.get_rect().size.y * $Sprite2D.scale.y / 2 > 800:
 		self.queue_free();
