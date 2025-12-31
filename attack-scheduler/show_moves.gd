@@ -47,16 +47,19 @@ func instantiate_no_collide_with_height(length: int):
 	instance.z_index = -10;
 
 func _physics_process(_delta: float) -> void:
+	var index = attack_track.attack_index_active_now();
+	var start_index = attack_track.attack_index_on_this_frame();
 	var updated: bool = self.try_update_current_move();
-	var index = attack_track.attack_index_on_this_frame();
 	if index < 0:
-		self.validate();
+		#self.validate();
 		return;
-	if updated:
-		push_warning("attempting to start new move while last move was still active");
-	print(self.get_instance_id(), ", doing move index: ", index);
-	self.start_attack(index);
-	self.validate();
+	if start_index >= 0:
+		self.start_attack(start_index);
+		if updated:
+			push_warning("attempting to start new move while last move was still active");
+	if self.current_move_frame != attack_track.attack_frame_active_now():
+		print(self.current_move_frame - attack_track.attack_frame_active_now())
+		push_error("desync! please fix me.");
 
 func validate() -> void:
 	var active_now = attack_track.attack_index_active_now();
@@ -79,6 +82,7 @@ func try_update_current_move() -> bool:
 		if self.current_move_frame > self.current_move.duration:
 			self.current_move = null;
 	if self.current_move == null:
+		self.current_move_frame = -1;
 		return false;
 	self.update_current_move();
 	self.current_move_frame += 1;

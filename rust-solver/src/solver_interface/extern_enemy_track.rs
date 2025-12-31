@@ -8,6 +8,7 @@ use godot::obj::WithBaseField;
 use godot::prelude::Base;
 use godot::prelude::GodotClass;
 use godot::prelude::godot_api;
+use std::i64;
 use std::num::NonZeroI64;
 
 #[derive(GodotClass)]
@@ -90,8 +91,8 @@ impl ExternEnemyTrack {
             .bind();
         bind
             .get_active_commit(self.get_id())
-            .map_or(-1, |v| {
-                v.get_start_frame() as i64 - bind.time_now() as i64
+            .map_or(i64::MIN, |v| {
+                bind.time_now() as i64 - 1 - v.get_start_frame() as i64
             })
     }
 }
