@@ -36,14 +36,15 @@ env:
   PROJECT_PATH: attack-scheduler/
   RUST_DIR: rust-solver
   CARGO_PROJECT_NAME: attack_scheduler
-  EM_VERSION: 3.1.74
-  EM_CACHE_FOLDER: 'emsdk-cache'
 
 jobs:
   build-rust-wasm32:
+    name: Build Wasm32 Target
     runs-on: ubuntu-latest
     env:
       BUILD_PATH: target/wasm32-unknown-emscripten/release/
+      EM_VERSION: 3.1.74
+      EM_CACHE_FOLDER: 'emsdk-cache'
     steps:
     - uses: actions/checkout@v4
     - name: Setup Godot
@@ -51,16 +52,21 @@ jobs:
       with:
         version: '4.5-stable'
     
-    - name: Set Godot4 BIN
+    - name: Setup Godot BIN on PATH
       run: | 
         echo "GODOT4_BIN=$GODOT4" >> $GITHUB_ENV
+    
+    - name: Replace Cargo Config File
+      run: |
+        cat .github/workflows/build_only_dep/_cargo.toml > ${{env.RUST_DIR}}/Cargo.toml
 
-    - name: Setup EMSDK cache
-      id: cache-system-libraries
+    - name: Setup EMSDK Cache
+      id: cache-emsdk
       uses: actions/cache@v4
       with:
         path: ${{env.EM_CACHE_FOLDER}}
         key: emsdk-${{env.EM_VERSION}}-${{ runner.os }}
+    
     - uses: mymindstorm/setup-emsdk@v14
       with:
         version: ${{env.EM_VERSION}}
@@ -75,41 +81,13 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-multilib llvm-dev libclang-dev clang
 
-    - name: Replace Cargo Config File
-      run: |
-        cat .github/workflows/build_only_dep/_cargo.toml > ${{env.RUST_DIR}}/Cargo.toml
-
     - name: Install Nightly
       run: |
         rustup toolchain install nightly
         rustup component add rust-src --toolchain nightly
         rustup target add wasm32-unknown-emscripten --toolchain nightly
-
-    - name: check rust cache
-      id: rust-deps-check
-      uses: actions/cache@v4
-      env: 
-        cache-name: "rust dependencies"
-      with:
-        path: |
-          ${{env.RUST_DIR}}/target/
-          ${{env.RUST_DIR}}/Cargo.lock
-        key: ${{ runner.os }}-build-rust-release-wasm32
-        lookup-only: true
-
-    - if: ${{steps.rust-deps-check.outputs.cache-hit == 'true'}}
-      name: remove_current_cargo_lock
-      run: | 
-        rm ${{env.RUST_DIR}}/Cargo.lock
-
-    - if: ${{steps.rust-deps-check.outputs.cache-hit != 'true'}}
-      name: remove_current_cargo_lock
-      working-directory: ${{env.RUST_DIR}}
-      run: |
-        cargo check
     
     - name: caches rust directory
-      id: cache-rust-deps-release
       uses: actions/cache@v4
       env: 
         cache-name: "rust dependencies"
@@ -123,13 +101,14 @@ jobs:
       run: cargo +nightly build --features nothreads -Zbuild-std --target wasm32-unknown-emscripten --release
       working-directory: ${{env.RUST_DIR}}
     # borrowed code end
-    - name: upload ${{env.EXPORT_NAME}}
+    - name: upload ${{env.RUST_DIR}}
       uses: actions/upload-artifact@v4
       with:
         name: ${{env.RUST_DIR}}-wasm32
         path: ${{env.RUST_DIR}}/${{env.BUILD_PATH}}${{env.CARGO_PROJECT_NAME}}.wasm
     
   build-rust-linux:
+    name: Build Linux Target (Build Process Only)
     runs-on: ubuntu-latest
     env:
       BUILD_PATH: target/release/
@@ -137,7 +116,6 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: caches rust directory
-      id: cache-rust-deps-release-linux-only
       uses: actions/cache@v4
       env: 
         cache-name: "rust dependencies"
@@ -151,11 +129,14 @@ jobs:
       run: cargo build --release
       working-directory: ${{env.RUST_DIR}}
 
-    - name: upload ${{env.EXPORT_NAME}}
+    - name: upload ${{env.RUST_DIR}}
       uses: actions/upload-artifact@v4
       with:
         name: ${{env.RUST_DIR}}-linux-build-only
         path: ${{env.RUST_DIR}}/${{env.BUILD_PATH}}lib${{env.CARGO_PROJECT_NAME}}.so
+        retention-days: 1
+        # gotta *really* save space.
+        compression-level: 9
     
   export-web:
     name: Web Export
@@ -172,33 +153,35 @@ jobs:
         run: |
           mkdir -v -p ~/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-      - name: Pull tileset-celluar-automata-wasm32
+      
+      ## pull required artifacts
+      - name: Pull ${{env.RUST_DIR}}-wasm32
         uses: actions/download-artifact@v4
         with:
-          name: ${{env.RUST_DIR}}-wasm32
+          name: ${{env.RUST_DIR}}-wasm32 
+      
+      - name: Pull ${{env.RUST_DIR}}-linux-build-only
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{env.RUST_DIR}}-linux-build-only
+      
       - name: Move ${{env.RUST_DIR}}-wasm32
         run: |
           mkdir -p ${{env.RUST_DIR}}/target/wasm32-unknown-emscripten/release/
           mv ./${{env.CARGO_PROJECT_NAME}}.wasm ${{env.RUST_DIR}}/target/wasm32-unknown-emscripten/release/${{env.CARGO_PROJECT_NAME}}.wasm
-      - name: Pull tileset-celluar-automata-linux-build-only
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{env.RUST_DIR}}-linux-build-only
+    
       - name: Move ${{env.RUST_DIR}}-linux-build-only
         run: |
           mkdir -p ${{env.RUST_DIR}}/target/debug
           mv ./lib${{env.CARGO_PROJECT_NAME}}.so ${{env.RUST_DIR}}/target/debug/lib${{env.CARGO_PROJECT_NAME}}.so
+      
       - name: Web Build
         run: |
           mkdir -v -p build/web
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
           godot --headless --verbose --export-release "Web" "$EXPORT_DIR/web/index.html"
-      # - name: Upload Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: web
-      #     path: build/web
+
       - name: Install rsync 📚
         run: |
           apt-get update && apt-get install -y rsync
@@ -207,3 +190,29 @@ jobs:
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: build/web # The folder the action should deploy.
+  
+  # gotta *really* save space.
+  erase-artifacts:
+    name: Erase Artifacts
+    needs: [export-web]
+    env:
+      REPLACEMENT_PATH: ~/replacement.txt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Replacement File
+        run: |
+          echo "this artifact has been erased to save space" > ${{env.REPLACEMENT_PATH}}
+      - name: erase ${{env.RUST_DIR}}-linux-build-only
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.RUST_DIR}}-linux-build-only
+          path: ${{env.REPLACEMENT_PATH}}
+          retention-days: 1
+          overwrite: true
+      - name: erase ${{env.RUST_DIR}}-wasm
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.RUST_DIR}}-wasm32
+          path: ${{env.REPLACEMENT_PATH}}
+          retention-days: 1
+          overwrite: true
