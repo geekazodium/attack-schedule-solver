@@ -1,4 +1,5 @@
 use super::extern_enemy_attack::ExternEnemyAttack;
+use crate::enemy_track::future_move_commit::FutureMoveCommit;
 use crate::solver_interface::SolverInterface;
 use godot::classes::Resource;
 use godot::classes::class_macros::private::virtuals::Os::Array;
@@ -87,8 +88,11 @@ impl ExternEnemyTrack {
     fn attack_frame_active_now(&self) -> i64 {
         let get_solver_parent = self.get_solver_parent();
         let bind = get_solver_parent.bind();
-        bind.get_active_commit(self.get_id()).map_or(i64::MIN, |v| {
-            bind.time_now() as i64 - 1 - v.get_start_frame() as i64
-        })
+        let time_now = i64::try_from(bind.time_now()).map(|x| x - 1);
+        bind.get_active_commit(self.get_id())
+            .map(FutureMoveCommit::get_start_frame)
+            .and_then(|v| i64::try_from(v).ok())
+            .and_then(|v| time_now.map(|x| x - v).ok())
+            .unwrap_or(i64::MIN)
     }
 }

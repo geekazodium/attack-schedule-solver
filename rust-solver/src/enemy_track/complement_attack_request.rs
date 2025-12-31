@@ -8,7 +8,7 @@ pub mod request_offset;
 pub struct ComplementAttackRequest {
     request_frames: Vec<u64>,
     taken_requests: Vec<bool>,
-    request_source_claim_end: u64,
+    claim_end_time: u64,
 }
 
 impl ComplementAttackRequest {
@@ -19,7 +19,7 @@ impl ComplementAttackRequest {
             Some(Self {
                 taken_requests: vec.iter().map(|_| false).collect(),
                 request_frames: vec.iter().map(|x| x + start_frame).collect(),
-                request_source_claim_end: request_source_claim_end + start_frame,
+                claim_end_time: request_source_claim_end + start_frame,
             })
         }
     }
@@ -41,7 +41,7 @@ impl ComplementAttackRequest {
             .copied()
     }
     pub(crate) fn claim_end_time(&self) -> u64 {
-        self.request_source_claim_end
+        self.claim_end_time
     }
     pub fn skip(&self, mut request_state: RequestOffset) -> Option<RequestOffset> {
         unsafe { request_state.increment() };
@@ -73,6 +73,7 @@ impl ComplementAttackRequest {
             }
         }
         let mut index = 0;
+        // skip all indices that come before the current attack's claimed duration.
         while self
             .request_frames
             .get(index)
@@ -80,16 +81,18 @@ impl ComplementAttackRequest {
         {
             index += 1;
         }
-        let get_end_frame = commit.get_end_frame(track);
+        let mut exceeded = false;
+        let commit_end_frame = commit.get_end_frame(track);
         for other_request_frame in commit.get_request_frames(track) {
             if other_request_frame >= self.claim_end_time() {
                 self.request_frames.push(other_request_frame);
                 self.taken_requests.push(false);
+                exceeded = true;
                 continue;
             }
 
             while index < self.request_frames.len() {
-                if self.request_frames[index] >= get_end_frame {
+                if self.request_frames[index] >= commit_end_frame {
                     break;
                 }
                 if self.request_frames[index] == other_request_frame {
@@ -99,14 +102,19 @@ impl ComplementAttackRequest {
                 index += 1;
             }
         }
-        while index < self.request_frames.len() {
-            if self.request_frames[index] >= get_end_frame {
-                break;
+        if !exceeded {
+            // if original claim length was not exceeded by the commit, there is no guarentee that 
+            // ones that we didn't check must be after the end of the commit's claim,
+            // so we check until we are sure we are out of the commit's claim. 
+            while index < self.request_frames.len() {
+                if self.request_frames[index] >= commit_end_frame {
+                    break;
+                }
+                self.taken_requests[index] = true;
+                index += 1;
             }
-            self.taken_requests[index] = true;
-            index += 1;
         }
-        self.request_source_claim_end = u64::max(get_end_frame, self.request_source_claim_end);
+        self.claim_end_time = u64::max(commit_end_frame, self.claim_end_time);
     }
 }
 
