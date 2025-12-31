@@ -44,23 +44,19 @@ impl ComplementAttackRequest {
         self.request_source_claim_end
     }
     pub fn skip(&self, mut request_state: RequestOffset) -> Option<RequestOffset> {
-        if request_state.increment() < self.taken_requests.len()
-            && self.next_unclaimed(&mut request_state)
-        {
-            return Some(request_state);
-        }
-        None
+        unsafe { request_state.increment() };
+        self.next_unclaimed(request_state)
     }
     //attempts to go to the next unclaimed item,
     //returns false if there isn't one.
-    pub fn next_unclaimed(&self, request_state: &mut RequestOffset) -> bool {
+    pub fn next_unclaimed(&self, mut request_state: RequestOffset) -> Option<RequestOffset> {
         while request_state.get() < self.request_frames.len() {
             if !self.taken_requests[request_state.get()] {
-                return true;
+                return Some(request_state);
             }
-            request_state.increment();
+            unsafe { request_state.increment() };
         }
-        false
+        None
     }
     pub(super) fn apply_commit_claim(&mut self, track: &EnemyTrack, commit: &FutureMoveCommit) {
         let mut index = 0;

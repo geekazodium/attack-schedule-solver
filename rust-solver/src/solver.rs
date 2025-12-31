@@ -113,13 +113,10 @@ impl Solver {
         mut request: ComplementAttackRequest,
         random: &mut impl SolverRandomState,
     ) -> ComplementAttackRequest {
-        loop {
-            if request
-                .first_req_frame(&RequestOffset::new_default())
-                .is_none()
-            {
-                break;
-            }
+        let mut request_state = RequestOffset::new_default();
+        while let Some(new_offset) = request.next_unclaimed(request_state) {
+            request_state = new_offset;
+
             let mut possible_commits = self
                 .tracks
                 .iter()

@@ -174,16 +174,18 @@ mod enemy_track_tests {
 
     fn commit_and_assert(
         request: &mut ComplementAttackRequest,
-        offset: &mut RequestOffset,
+        offset: RequestOffset,
         track: &mut EnemyTrack,
         take_option_index: usize,
         expected_len: usize,
         expected_next_unclaimed: bool,
-    ) {
+    ) -> Option<RequestOffset> {
         let mut commits = track.possible_now_commits(&request, &offset, 0);
         assert_eq!(commits.len(), expected_len);
         track.commit(request, commits.swap_remove(take_option_index));
-        assert_eq!(request.next_unclaimed(offset), expected_next_unclaimed);
+        let tmp = request.next_unclaimed(offset);
+        assert_eq!(tmp.is_some(), expected_next_unclaimed);
+        tmp
     }
 
     fn assert_commits_length(
@@ -233,8 +235,8 @@ mod enemy_track_tests {
         let mut mock_request: ComplementAttackRequest = src.into();
 
         let mut offset: RequestOffset = RequestOffset::new_default();
-        commit_and_assert(&mut mock_request, &mut offset, &mut mock_track, 1, 2, true);
-        commit_and_assert(&mut mock_request, &mut offset, &mut mock_track, 0, 1, false);
+        offset = commit_and_assert(&mut mock_request, offset, &mut mock_track, 1, 2, true).unwrap();
+        commit_and_assert(&mut mock_request, offset, &mut mock_track, 0, 1, false);
     }
 
     #[test]

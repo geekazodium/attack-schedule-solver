@@ -14,7 +14,9 @@ impl RequestOffset {
     pub fn get(&self) -> usize {
         self.request_offset
     }
-    pub fn increment(&mut self) -> usize {
+    // unsafe as this preincrements the value but DOES NOT DO ANY CHECK
+    // to verify that this results in a valid state afterwards.
+    pub unsafe fn increment(&mut self) -> usize {
         self.request_offset += 1;
         self.request_offset
     }
