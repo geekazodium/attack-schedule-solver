@@ -93,9 +93,16 @@ impl SolverInterface {
     pub fn get_commit_on_this_frame(&self, id: NonZeroI64) -> Option<&FutureMoveCommit> {
         // subtract one because the end of the processing cycle for the solver increments and so checking
         // when you are outside of that cycle, you will need to effectively undo that.
-        let time_now = self.time_now() - 1;
+        let time_now = self.time_now().checked_sub(0);
         self.get_latest_nonpast_commit(id)
-            .filter(|v| v.get_start_frame() == time_now)
+            .filter(|v| time_now.is_some_and(|t| v.get_start_frame().eq(&t)))
+    }
+    pub fn get_active_commit(&self, id: NonZeroI64) -> Option<&FutureMoveCommit> {
+        // subtract one because the end of the processing cycle for the solver increments and so checking
+        // when you are outside of that cycle, you will need to effectively undo that.
+        let time_now = self.time_now().checked_sub(1);
+        self.get_latest_nonpast_commit(id)
+            .filter(|v| time_now.is_some_and(|t| v.get_start_frame().le(&t)))
     }
     pub fn get_current_lead(&self) -> Option<NonZeroI64> {
         self.solver.get_lead()

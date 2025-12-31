@@ -23,7 +23,7 @@ size = Vector2(1194, 74)
 [node name="Main" type="Node2D"]
 
 [node name="initiator" type="Node" parent="." node_paths=PackedStringArray("tracks", "next_request_timer")]
-process_physics_priority = 1
+process_physics_priority = -100
 script = ExtResource("3_h2yge")
 tracks = [NodePath("../Track1"), NodePath("../Track2"), NodePath("../Track3")]
 next_request_timer = NodePath("Timer")
@@ -32,6 +32,7 @@ next_request_timer = NodePath("Timer")
 process_callback = 0
 wait_time = 0.2
 one_shot = true
+autostart = true
 
 [node name="Track1" type="Node2D" parent="."]
 position = Vector2(200, -350)

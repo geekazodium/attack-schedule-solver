@@ -59,7 +59,7 @@ impl ExternEnemyTrack {
         );
     }
     #[func]
-    fn attack_index_on_this_frame(&mut self) -> i64 {
+    fn attack_index_on_this_frame(&self) -> i64 {
         self.get_solver_parent()
             .bind()
             .get_commit_on_this_frame(self.get_id())
@@ -73,5 +73,25 @@ impl ExternEnemyTrack {
             .bind()
             .get_current_lead()
             .is_some_and(|v| v.eq(&self.get_id()))
+    }
+    #[func]
+    fn attack_index_active_now(&self) -> i64 {
+        self.get_solver_parent()
+            .bind()
+            .get_active_commit(self.get_id())
+            .map_or(-1, |v| {
+                i64::try_from(v.get_index()).expect("usize out of i64 range")
+            })
+    }
+    #[func]
+    fn attack_frame_active_now(&self) -> i64 {
+        let get_solver_parent = self.get_solver_parent();
+        let bind = get_solver_parent
+            .bind();
+        bind
+            .get_active_commit(self.get_id())
+            .map_or(-1, |v| {
+                v.get_start_frame() as i64 - bind.time_now() as i64
+            })
     }
 }

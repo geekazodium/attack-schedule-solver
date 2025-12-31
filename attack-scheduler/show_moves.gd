@@ -50,11 +50,24 @@ func _physics_process(_delta: float) -> void:
 	var updated: bool = self.try_update_current_move();
 	var index = attack_track.attack_index_on_this_frame();
 	if index < 0:
+		self.validate();
 		return;
 	if updated:
 		push_warning("attempting to start new move while last move was still active");
 	print(self.get_instance_id(), ", doing move index: ", index);
 	self.start_attack(index);
+	self.validate();
+
+func validate() -> void:
+	var active_now = attack_track.attack_index_active_now();
+	var expected_current_move;
+	if active_now < 0:
+		expected_current_move = attack_track.attacks[active_now];
+	else:
+		expected_current_move = null;
+	if expected_current_move != self.current_move:
+		push_error("what")
+		print(self.current_move_frame - attack_track.attack_frame_active_now())
 
 func start_attack(index: int) -> void:
 	self.current_move = self.attack_track.attacks[index];
