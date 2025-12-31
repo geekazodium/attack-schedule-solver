@@ -29,8 +29,8 @@ impl ComplementAttackRequest {
         }
         self.request_frames.get(request_state.get()).copied()
     }
-    pub(crate) fn iter_skip_start(
-        &'_ self,
+    pub(super) fn iter_skip_start(
+        &self,
         request_state: &RequestOffset,
     ) -> impl Iterator<Item = u64> {
         self.request_frames
@@ -103,9 +103,9 @@ impl ComplementAttackRequest {
             }
         }
         if !exceeded {
-            // if original claim length was not exceeded by the commit, there is no guarentee that 
+            // if original claim length was not exceeded by the commit, there is no guarentee that
             // ones that we didn't check must be after the end of the commit's claim,
-            // so we check until we are sure we are out of the commit's claim. 
+            // so we check until we are sure we are out of the commit's claim.
             while index < self.request_frames.len() {
                 if self.request_frames[index] >= commit_end_frame {
                     break;

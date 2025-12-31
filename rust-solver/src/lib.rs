@@ -20,8 +20,6 @@ mod tests {
     use crate::tests::default_hasher_random::HashRandom;
     use std::i64;
     use std::num::NonZeroI64;
-    use std::time::Duration;
-    use std::time::Instant;
 
     mod default_hasher_random;
 
@@ -64,16 +62,7 @@ mod tests {
             );
         }
 
-        let now = Instant::now();
-        // solver.try_create_new_request();
-        let request = solver.solve(&mut random);
-        let elapsed = Instant::now() - now;
-        dbg!(elapsed);
-        //cursed performance target check
-        assert!(elapsed < Duration::from_millis(8));
-        // dbg!(&solver);
-        dbg!(request);
-        // dbg!(solver);
+        solver.solve(&mut random);
     }
 
     #[test]

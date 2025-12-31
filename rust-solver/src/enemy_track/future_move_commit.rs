@@ -26,7 +26,6 @@ impl FutureMoveCommit {
         Some(unsafe { Self::new_unchecked(attack_index, start_frame) })
     }
     pub fn get_start_frame(&self) -> u64 {
-        // godot_print!("frames after now: {}", self.frames_after_now);
         self.start_frame
     }
     pub fn get_active_frames<'a>(

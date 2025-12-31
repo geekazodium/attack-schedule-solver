@@ -1,4 +1,5 @@
 use super::extern_enemy_attack::ExternEnemyAttack;
+use crate::attack::Attack;
 use crate::enemy_track::future_move_commit::FutureMoveCommit;
 use crate::solver_interface::SolverInterface;
 use godot::classes::Resource;
@@ -47,6 +48,9 @@ impl ExternEnemyTrack {
     pub fn unparent_from_solver(&mut self) {
         godot_print!("instance({}) unparenting...", self.base().instance_id());
         self.solver_parent = None;
+    }
+    pub fn convert_to_attacks_internal(&self) -> Vec<Attack> {
+        self.get_attacks().iter_shared().map(Attack::from).collect()
     }
 }
 

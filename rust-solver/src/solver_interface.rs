@@ -1,4 +1,3 @@
-use crate::attack::Attack;
 use crate::enemy_track::EnemyTrack;
 use crate::enemy_track::future_move_commit::FutureMoveCommit;
 use crate::solver::Solver;
@@ -47,12 +46,7 @@ impl SolverInterface {
     #[func]
     fn add_track(&mut self, mut extern_track: Gd<ExternEnemyTrack>) {
         extern_track.bind_mut().parent_to_solver(self.to_gd());
-        let attacks = extern_track
-            .bind()
-            .get_attacks()
-            .iter_shared()
-            .map(Attack::from)
-            .collect();
+        let attacks = extern_track.bind().convert_to_attacks_internal();
         let track = EnemyTrack::new(attacks);
         let index = extern_track.bind().get_id();
         self.solver.add_track(index, track);
