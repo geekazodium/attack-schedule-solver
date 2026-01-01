@@ -74,7 +74,8 @@ func validate() -> void:
 
 func start_attack(index: int) -> void:
 	self.current_move = self.attack_track.attacks[index];
-	self.instantiate_no_collide_with_height(self.current_move.duration);
+	if !self.depleted:
+		self.instantiate_no_collide_with_height(self.current_move.duration);
 	self.current_move_frame = 0;
 
 func try_update_current_move() -> bool:

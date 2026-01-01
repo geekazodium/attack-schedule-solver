@@ -161,7 +161,7 @@ impl EnemyTrack {
             None
         } else {
             let n = self.future_stack.swap_remove(0);
-            if n.get_start_frame().ge(&now) {
+            if n.get_start_frame().le(&now) {
                 Some(n)
             } else {
                 None
