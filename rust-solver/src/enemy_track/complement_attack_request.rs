@@ -58,7 +58,7 @@ impl ComplementAttackRequest {
         }
         None
     }
-    pub(super) fn apply_commit_claim(&mut self, track: &EnemyTrack, commit: &FutureMoveCommit) {
+    pub fn apply_commit_claim(&mut self, track: &EnemyTrack, commit: &FutureMoveCommit) {
         let mut index = 0;
         for active in commit.get_active_frames(track) {
             if active >= self.claim_end_time() {

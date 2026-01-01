@@ -57,7 +57,7 @@ impl ExternEnemyTrack {
 #[godot_api]
 impl ExternEnemyTrack {
     #[func]
-    fn commit_move_now(&mut self, index: i64) {
+    fn commit_move_now(&self, index: i64) {
         self.get_solver_parent().bind_mut().commit_move_now(
             self.get_id(),
             usize::try_from(index).expect("index of move out of usize range"),
@@ -99,4 +99,24 @@ impl ExternEnemyTrack {
             .and_then(|v| time_now.map(|x| x - v).ok())
             .unwrap_or(i64::MIN)
     }
+    // function to enable/disable a certain attack
+    #[func]
+    fn set_attack_validity(&self, index: i64, valid: bool) {
+        self.get_solver_parent().bind_mut().change_move_validity(
+            self.get_id(),
+            usize::try_from(index).expect("index move out of range"),
+            valid,
+        );
+    }
+    // function to reset all attacks
+    #[func]
+    fn reset_attacks_validity(&self, valid: bool) {
+        self.get_solver_parent()
+            .bind_mut()
+            .reset_track_validity(self.get_id(), valid);
+    }
+    // private function that runs when attacks are disabled to reset any future
+    //      attacks that won't be able to happen due to disabling.
+    // private function in other class to remove all attacks that depend on an attack
+    // and then regenerate the request.
 }

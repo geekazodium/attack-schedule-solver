@@ -120,7 +120,6 @@ impl Solver {
             let mut possible_commits = self
                 .tracks
                 .iter()
-                .filter(|(index, _)| self.lead_track_id.is_none_or(|i| !i.eq(*index)))
                 .map(|(index, track)| {
                     (
                         index,
@@ -150,6 +149,28 @@ impl Solver {
         } else {
             println!("no last queued attack, can not create request and solve");
         }
+    }
+    pub fn reset_non_current(&mut self) {
+        let now = self.time_now_frames();
+        for track in self.tracks.values_mut() {
+            track.reset_non_current(now);
+        }
+        let mut req = None;
+        for (track, commit) in self
+            .tracks
+            .values()
+            .filter_map(|track| track.latest_nonpast_commit().map(|commit| (track, commit)))
+            .filter(|(track, commit)| track.commit_valid(commit))
+        {
+            req = match req {
+                None => track.get_commit_as_request(commit),
+                Some(mut req) => {
+                    req.apply_commit_claim(track, commit);
+                    Some(req)
+                }
+            }
+        }
+        self.lead_request = req;
     }
 }
 

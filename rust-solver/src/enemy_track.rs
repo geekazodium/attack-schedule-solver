@@ -31,6 +31,17 @@ impl EnemyTrack {
             future_stack: vec![],
         }
     }
+    pub fn set_validity(&mut self, index: usize, valid: bool) {
+        self.attacks_validitiy[index] = valid;
+    }
+    pub fn reset_validity(&mut self, valid: bool) {
+        self.attacks_validitiy.fill(valid);
+    }
+    pub fn commit_valid(&self, commit: &FutureMoveCommit) -> bool {
+        self.attacks_validitiy
+            .get(commit.get_index())
+            .is_some_and(|v| *v)
+    }
     fn valid_attacks(&self) -> impl Iterator<Item = &EnemyTrackAttack> {
         self.attacks
             .iter()
@@ -102,7 +113,10 @@ impl EnemyTrack {
     fn last_future_stack_item(&self) -> Option<&FutureMoveCommit> {
         self.future_stack.last()
     }
-    fn get_commit_as_request(&self, commit: &FutureMoveCommit) -> Option<ComplementAttackRequest> {
+    pub fn get_commit_as_request(
+        &self,
+        commit: &FutureMoveCommit,
+    ) -> Option<ComplementAttackRequest> {
         self.get_attack(commit.get_index())
             .to_request(commit.get_start_frame())
     }
@@ -126,6 +140,9 @@ impl EnemyTrack {
         self.first_actionable_frame(time_now) <= start_time
     }
     pub fn commit_by_index(&mut self, attack_index: usize, start_time: u64, time_now: u64) -> bool {
+        if !self.attacks_validitiy.get(attack_index).is_some_and(|v| *v) {
+            return false;
+        }
         let maybe_commit = FutureMoveCommit::try_create(
             attack_index,
             start_time,
@@ -137,6 +154,23 @@ impl EnemyTrack {
             return true;
         }
         false
+    }
+    // tests needed
+    pub fn reset_non_current(&mut self, now: u64) {
+        let now_commit = if self.future_stack.is_empty() {
+            None
+        } else {
+            let n = self.future_stack.swap_remove(0);
+            if n.get_start_frame().ge(&now) {
+                Some(n)
+            } else {
+                None
+            }
+        };
+        self.future_stack.clear();
+        if let Some(commit) = now_commit {
+            self.future_stack.push(commit);
+        }
     }
 }
 
@@ -206,6 +240,35 @@ mod enemy_track_tests {
         ]);
         let mock_request: ComplementAttackRequest =
             Attack::new_expect(30, vec![], vec![20, 28]).into();
+        assert_commits_length(&mock_request, &mock_track, 2);
+    }
+
+    #[test]
+    fn reject_due_to_invalid() {
+        let mut mock_track = EnemyTrack::new(vec![
+            Attack::new_expect(20, vec![8, 16], vec![]),
+            Attack::new_expect(20, vec![8, 10, 16], vec![]),
+            Attack::new_expect(20, vec![12], vec![]),
+        ]);
+        let mock_request: ComplementAttackRequest =
+            Attack::new_expect(30, vec![], vec![20, 28]).into();
+        mock_track.set_validity(0, false);
+        mock_track.set_validity(2, false);
+        assert_commits_length(&mock_request, &mock_track, 0);
+    }
+
+    #[test]
+    fn reset_to_valid() {
+        let mut mock_track = EnemyTrack::new(vec![
+            Attack::new_expect(20, vec![8, 16], vec![]),
+            Attack::new_expect(20, vec![8, 10, 16], vec![]),
+            Attack::new_expect(20, vec![12], vec![]),
+        ]);
+        let mock_request: ComplementAttackRequest =
+            Attack::new_expect(30, vec![], vec![20, 28]).into();
+        mock_track.set_validity(0, false);
+        mock_track.set_validity(2, false);
+        mock_track.reset_validity(true);
         assert_commits_length(&mock_request, &mock_track, 2);
     }
 

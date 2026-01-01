@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://bawrb1b2gwxv7"]
+
+[ext_resource type="Script" uid="uid://dit44mmvxk3sj" path="res://show_moves.gd" id="1_8nfsw"]
+[ext_resource type="ExternEnemyTrack" uid="uid://boplywh12t4ks" path="res://moves/test_track_1.tres" id="2_vr403"]
+[ext_resource type="PackedScene" uid="uid://daiimno0y6uad" path="res://falling not a note/placeholder.tscn" id="3_ucvjy"]
+[ext_resource type="Script" uid="uid://bugsv7u37ihaj" path="res://track_health.gd" id="4_82y7p"]
+
+[node name="Track1" type="Node2D"]
+script = ExtResource("1_8nfsw")
+attack_track = ExtResource("2_vr403")
+placeholder_spawn_scene = ExtResource("3_ucvjy")
+
+[node name="Control" type="ProgressBar" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -57.0
+offset_top = 35.5
+offset_right = 57.0
+offset_bottom = 62.5
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 10.0
+script = ExtResource("4_82y7p")
+
+[connection signal="parry_instantiated" from="." to="Control" method="_track_parry_instantiated"]
+[connection signal="dead" from="Control" to="." method="_on_health_depleted"]

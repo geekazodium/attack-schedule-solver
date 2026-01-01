@@ -79,7 +79,7 @@ func start_attack(index: int) -> void:
 
 func try_update_current_move() -> bool:
 	if self.current_move != null:
-		if self.current_move_frame > self.current_move.duration:
+		if self.current_move_frame >= self.current_move.duration:
 			self.current_move = null;
 	if self.current_move == null:
 		self.current_move_frame = -1;
@@ -88,11 +88,22 @@ func try_update_current_move() -> bool:
 	self.current_move_frame += 1;
 	return true;
 
+signal parry_instantiated(parry: Node)
+
 func update_current_move() -> void:
+	if self.depleted:
+		return;
 	# possibly slightly inefficient, could just use a counter instead for o(1)
 	var index = self.current_move.frames.bsearch(self.current_move_frame);
 	if self.current_move.frames.size() > index:
 		if self.current_move.frames[index] == self.current_move_frame:
 			self.active_frame_start.emit();
 			var parry_dir: int = self.current_move.parry_directions[index];
-			self.instantiate_parry(parry_dir);
+			self.parry_instantiated.emit(self.instantiate_parry(parry_dir));
+
+var depleted: bool = false;
+
+func _on_health_depleted() -> void:
+	self.attack_track.reset_attacks_validity(false);
+	print("health depleted!");
+	depleted = true;

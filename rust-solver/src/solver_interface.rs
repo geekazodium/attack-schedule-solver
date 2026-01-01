@@ -21,6 +21,7 @@ mod godot_random;
 #[class(base=Node)]
 struct SolverInterface {
     base: Base<Node>,
+    reset_needed: bool,
     solver: Solver,
 }
 
@@ -29,14 +30,19 @@ impl INode for SolverInterface {
     fn init(base: Base<Node>) -> Self {
         Self {
             base,
+            reset_needed: false,
             solver: Solver::new(),
         }
     }
     fn physics_process(&mut self, _delta: f64) {
         let mut random = GodotRandom {};
 
-        self.solver.solve(&mut random);
         self.solver.update_latest_nonpast();
+        if self.reset_needed {
+            self.reset_needed = false;
+            self.solver.reset_non_current();
+        }
+        self.solver.solve(&mut random);
         self.solver.tick();
     }
 }
@@ -62,6 +68,9 @@ impl SolverInterface {
 }
 
 impl SolverInterface {
+    fn queue_reset(&mut self) {
+        self.reset_needed = true;
+    }
     pub fn time_now(&self) -> u64 {
         self.solver.time_now_frames()
     }
@@ -76,9 +85,19 @@ impl SolverInterface {
             .commit_by_index(index, time_now, time_now)
         {
             self.solver.change_lead(id);
-            godot_print!("sucess committed move");
-        } else {
-            // godot_warn!("failed to commit move");
+            godot_print!("sucessfully committed move");
+        }
+    }
+    pub fn change_move_validity(&mut self, id: NonZeroI64, index: usize, valid: bool) {
+        self.solver.get_track_mut(id).set_validity(index, valid);
+        if !valid {
+            self.queue_reset();
+        }
+    }
+    pub fn reset_track_validity(&mut self, id: NonZeroI64, valid: bool) {
+        self.solver.get_track_mut(id).reset_validity(valid);
+        if !valid {
+            self.queue_reset();
         }
     }
     pub fn get_latest_nonpast_commit(&self, id: NonZeroI64) -> Option<&FutureMoveCommit> {
