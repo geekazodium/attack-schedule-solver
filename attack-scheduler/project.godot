@@ -42,3 +42,7 @@ right={
 
 2d_physics/layer_1="Left"
 2d_physics/layer_2="Right"
+
+[physics]
+
+common/physics_interpolation=true

@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dbmqb5jaq1ajk"]
+[gd_scene load_steps=13 format=3 uid="uid://dbmqb5jaq1ajk"]
 
 [ext_resource type="ExternEnemyTrack" uid="uid://xd5ssh3iukl2" path="res://moves/test_track_2.tres" id="2_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://bawrb1b2gwxv7" path="res://track.tscn" id="2_5vw27"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://bernm1mp5eohb" path="res://hit_shapecast.gd" id="7_5vw27"]
 [ext_resource type="Script" uid="uid://rje2exq5ixdp" path="res://damage.gd" id="7_272bh"]
 [ext_resource type="PackedScene" uid="uid://d2xeecgyq34sv" path="res://hit effect/hit_effect.tscn" id="8_4c57u"]
+[ext_resource type="Script" uid="uid://iff4ivrht4gc" path="res://game_over_button.gd" id="9_kek77"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_272bh"]
 size = Vector2(1000, 20)
@@ -123,3 +124,20 @@ offset_right = 548.0
 offset_bottom = 13.5
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="Button" type="Button" parent="." node_paths=PackedStringArray("tracks")]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -209.0
+offset_top = -91.0
+offset_right = 209.0
+offset_bottom = 91.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "You did it! would you like to restart?"
+script = ExtResource("9_kek77")
+tracks = [NodePath("../Track1"), NodePath("../Track3"), NodePath("../Track2")]

@@ -155,7 +155,10 @@ impl EnemyTrack {
         }
         false
     }
-    // tests needed
+    // reset all non-current moves on the future stack.
+    // DOES NOT RESET ANYTHING THAT IS CURRENT EVEN IF THE ACTION IS NO LONGER
+    // VALID, AS THAT ACTION HAS ALREADY BEEN DONE AND CAN NOT BE BROKEN
+    // HALFWAY.
     pub fn reset_non_current(&mut self, now: u64) {
         let now_commit = if self.future_stack.is_empty() {
             None
