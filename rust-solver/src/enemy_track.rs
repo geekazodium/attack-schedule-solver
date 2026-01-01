@@ -303,6 +303,67 @@ mod enemy_track_tests {
     }
 
     #[test]
+    fn can_reset_future() {
+        let mut mock_track = EnemyTrack::new(vec![
+            Attack::new_expect(10, vec![1, 9], vec![2]),
+            Attack::new_expect(13, vec![12], vec![4]),
+        ]);
+
+        let src = Attack::new_expect(30, vec![], vec![20, 28]);
+        let mut mock_request: ComplementAttackRequest = src.into();
+
+        let mut offset: RequestOffset = RequestOffset::new_default();
+        offset = commit_and_assert(&mut mock_request, offset, &mut mock_track, 1, 2, true).unwrap();
+        commit_and_assert(&mut mock_request, offset, &mut mock_track, 0, 1, false);
+        mock_track.update_latest_nonpast(5);
+        mock_track.reset_non_current(5);
+        assert!(mock_track.latest_nonpast_commit().is_none());
+    }
+
+    #[test]
+    fn can_partial_reset() {
+        let mut mock_track = EnemyTrack::new(vec![
+            Attack::new_expect(10, vec![1, 9], vec![2]),
+            Attack::new_expect(13, vec![12], vec![4]),
+        ]);
+
+        let src = Attack::new_expect(30, vec![], vec![20, 28]);
+        let mut mock_request: ComplementAttackRequest = src.into();
+
+        let mut offset: RequestOffset = RequestOffset::new_default();
+        offset = commit_and_assert(&mut mock_request, offset, &mut mock_track, 1, 2, true).unwrap();
+        commit_and_assert(&mut mock_request, offset, &mut mock_track, 0, 1, false);
+        mock_track.update_latest_nonpast(18);
+        mock_track.reset_non_current(18);
+        assert!(mock_track.latest_nonpast_commit().is_some()); 
+        mock_track.update_latest_nonpast(21);
+        mock_track.reset_non_current(21);
+        assert!(mock_track.latest_nonpast_commit().is_none());
+    }
+
+    #[test]
+    fn does_not_reset() {
+        let mut mock_track = EnemyTrack::new(vec![
+            Attack::new_expect(10, vec![1, 9], vec![2]),
+            Attack::new_expect(13, vec![12], vec![4]),
+        ]);
+
+        let src = Attack::new_expect(30, vec![], vec![20, 28]);
+        let mut mock_request: ComplementAttackRequest = src.into();
+
+        let mut offset: RequestOffset = RequestOffset::new_default();
+        offset = commit_and_assert(&mut mock_request, offset, &mut mock_track, 1, 2, true).unwrap();
+        commit_and_assert(&mut mock_request, offset, &mut mock_track, 0, 1, false);
+        mock_track.update_latest_nonpast(18);
+        assert!(mock_track.latest_nonpast_commit().is_some()); 
+        for i in 19..=28{
+            mock_track.update_latest_nonpast(i);
+        }
+        mock_track.reset_non_current(28);
+        assert!(mock_track.latest_nonpast_commit().is_some());
+    }
+    
+    #[test]
     fn can_match_all_futures() {
         let mock_track = EnemyTrack::new(vec![
             Attack::new_expect(11, vec![1, 10], vec![]),
